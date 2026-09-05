@@ -1,11 +1,6 @@
-"""Retrieval top-k sobre el indice ChromaDB.
-
-Responsable: Integrante Parte 2 (Alejandra).
-TODO:
-- retrieve(query: str, top_k: int) -> list[dict]
-  Cada resultado debe incluir: {"text": ..., "source": ..., "score": ...}
-"""
+"""Retrieval de los chunks mas relevantes para una consulta."""
 
 
-def retrieve(query, top_k):
+def retrieve(query: str, top_k: int) -> list[dict]:
+    """Devuelve los top_k chunks mas relevantes: [{"text": ..., "source": ..., "score": ...}, ...]."""
     raise NotImplementedError

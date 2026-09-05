@@ -1,10 +1,6 @@
-"""Generacion de embeddings para chunks e indice.
-
-Responsable: Integrante Parte 2 (Alejandra).
-TODO:
-- get_embedding_function() -> objeto embeddings compatible con Chroma
-"""
+"""Funcion de embeddings usada para indexar y consultar."""
 
 
 def get_embedding_function():
+    """Devuelve un objeto de embeddings compatible con ChromaDB."""
     raise NotImplementedError

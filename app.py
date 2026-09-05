@@ -1,13 +1,11 @@
-"""Streamlit: chat + chunks/contexto visible + tabla de metricas.
-
-TODO (Parte 4, trabajo conjunto):
-- st.chat_input / st.chat_message
-- Mostrar chunks/contexto recuperado junto a la respuesta
-- Tabla simple de metricas: k, n. de chunks, tiempo, modelo
-"""
+"""Streamlit: chat, contexto recuperado y tabla de metricas."""
 import streamlit as st
 
-st.title("Asistente del Parque de El Retiro")
-st.caption("RAG Engineering - Project Break 1")
 
-st.info("TODO: conectar con src/generate.responder() y mostrar chat + contexto + metricas.")
+def main() -> None:
+    """Punto de entrada de la app de Streamlit."""
+    raise NotImplementedError
+
+
+if __name__ == "__main__":
+    main()

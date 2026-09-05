@@ -1,40 +1,20 @@
-"""CLI del sistema RAG - Parque de El Retiro.
-
-Uso previsto:
-    python main.py --index                    # indexar el corpus (offline)
-    python main.py --index --recreate-index    # borrar y reconstruir el indice desde cero
-    python main.py --query "pregunta"          # solo retrieval, sin generacion
-    python main.py --ask "pregunta"            # respuesta RAG completa
-
-TODO: separar claramente offline (--index) de online (--query / --ask).
-"""
+"""CLI del sistema RAG: indexar el corpus (offline) y preguntar (online)."""
 import argparse
 
-import config
-from src.load import load_documents
-from src.chunk import chunk_documents
-from src.index import build_index
-from src.retrieve import retrieve
-from src.generate import responder
+
+def cmd_index(recreate: bool = False) -> None:
+    """Carga, chunkea e indexa el corpus completo."""
+    raise NotImplementedError
 
 
-def cmd_index(recreate: bool = False):
-    documents = load_documents(config.DATA_DIR)
-    chunks = chunk_documents(documents, config.CHUNK_SIZE, config.CHUNK_OVERLAP)
-    build_index(chunks, config.CHROMA_DIR, config.COLLECTION_NAME, recreate=recreate)
-    print(f"Indexados {len(chunks)} chunks en '{config.COLLECTION_NAME}' (recreate={recreate}).")
+def cmd_query(pregunta: str) -> None:
+    """Ejecuta solo retrieval y muestra los chunks recuperados."""
+    raise NotImplementedError
 
 
-def cmd_query(pregunta: str):
-    resultados = retrieve(pregunta, config.TOP_K)
-    for r in resultados:
-        print(f"[{r['source']}] {r['text'][:200]}...")
-
-
-def cmd_ask(pregunta: str):
-    resultado = responder(pregunta)
-    print(resultado["respuesta"])
-    print("Fuentes:", resultado.get("fuentes"))
+def cmd_ask(pregunta: str) -> None:
+    """Ejecuta el flujo RAG completo y muestra la respuesta."""
+    raise NotImplementedError
 
 
 def main():
