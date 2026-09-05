@@ -1,0 +1,6 @@
+nombre,tipo,horario,acceso_mascotas
+Palacio de Cristal,monumento,10:00-18:00,no
+Estanque Grande,zona_recreativa,06:00-22:00,no
+Rosaleda,jardin,10:00-20:00,si
+Fuente Egipcia,monumento,24h,si
+Bosque del Recuerdo,zona_verde,06:00-22:00,si
