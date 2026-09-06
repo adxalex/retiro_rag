@@ -17,6 +17,18 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 
+# --- Embeddings ---
+EMBED_BATCH_SIZE = 32  # chunks por lote enviado a la API de Gemini embeddings
+
+# --- Indexación ---
+INDEX_BATCH_SIZE = 100  # vectores por lote en collection.upsert()
+HNSW_SPACE = "cosine"  # métrica del índice (contrato compartido)
+
 # --- Retrieval ---
 TOP_K = 3
-MAX_CHUNKS = 200  # limite de chunks indexados; documentar si se cambia
+
+# Límite opcional para el experimento de indexación.
+# None representa ausencia de límite.
+# Debe aplicarse mediante embed.limitar_chunks() en el futuro
+# orquestador chunk -> embed -> index.
+MAX_CHUNKS = None
