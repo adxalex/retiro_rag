@@ -36,6 +36,19 @@ MANIFIESTO = {
     "retiro_palacio_cristal_velazquez.md": {
         "category": "monumentos",
         "corpus_group": "historia_monumentos_jardines",
+
+    }, 
+    "itinerario_pie_retiro_.pdf": {
+        "category": "itinerarios",
+        "corpus_group": "itinerarios_informacion_practica_seguridad",
+    },
+    "itinerarios_running_retiro_.pdf": {
+        "category": "itinerarios",
+        "corpus_group": "itinerarios_informacion_practica_seguridad",
+    },
+    "informacion_practica_bicicleta_retiro.pdf": {
+        "category": "informacion_practica",
+        "corpus_group": "itinerarios_informacion_practica_seguridad",
     },
 }
 
