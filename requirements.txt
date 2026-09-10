@@ -6,3 +6,5 @@ streamlit
 python-dotenv
 pypdf
 pandas
+requests
+chromadb
