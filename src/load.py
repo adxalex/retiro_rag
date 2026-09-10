@@ -101,7 +101,7 @@ def _leer_pdf(ruta: Path) -> list[dict]:
             continue  # pagina sin texto extraible (ej. escaneada); se omite
 
         documentos.append({
-            "document_id": f"{document_id_base}-p{numero_pagina}",
+            "document_id": document_id_base,
             "text": texto,
             "source": ruta.name,
             "category": meta["category"],
@@ -162,7 +162,7 @@ def _extract_text(path: Path) -> list[dict]:
 def load_documents(data_dir: str) -> list[dict]:
     """Recorre data_dir, incluyendo subcarpetas, y devuelve la lista completa de LoadedDocument."""
     documentos: list[dict] = []
-    ids_vistos: set[str] = set()
+    ids_vistos: set[tuple[str, int | None]] = set()
 
     for ruta in sorted(Path(data_dir).rglob("*")):
         if not ruta.is_file():
@@ -173,9 +173,10 @@ def load_documents(data_dir: str) -> list[dict]:
             continue
 
         for doc in _extract_text(ruta):
-            if doc["document_id"] in ids_vistos:
-                raise ValueError(f"document_id duplicado: {doc['document_id']}")
-            ids_vistos.add(doc["document_id"])
+            clave = (doc["document_id"], doc.get("page"))
+            if clave in ids_vistos:
+                raise ValueError(f"Combinacion document_id+page duplicada: {clave}")
+            ids_vistos.add(clave)
             documentos.append(doc)
 
     return documentos
