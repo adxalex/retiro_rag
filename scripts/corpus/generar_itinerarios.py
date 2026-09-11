@@ -1,4 +1,4 @@
-"""Genera los PDF del bloque itinerarios / información práctica del corpus Retiro RAG.
+"""Genera los PDF del bloque itinerarios / información práctica / seguridad del corpus Retiro RAG.
 
 Diseño pensado para el pipeline load -> chunk:
 - Un documento por modalidad (una sola category por documento, según el contrato).
@@ -33,6 +33,12 @@ FUENTES = {
     "ordenanza": "Ayuntamiento de Madrid (nota de prensa de 23/10/2018) y Madrid 360 (2022), "
                  "Ordenanza de Movilidad Sostenible.",
     "zonaretiro": "Zona Retiro, «Montar en bicicleta por el Retiro» (23/05/2017), CC BY-NC 3.0 ES.",
+    "reinasofia": "Museo Nacional Centro de Arte Reina Sofía, «Horarios y tarifas», consultado el 11/09/2026.",
+    "perros": "Ayuntamiento de Madrid, «Los perros en los parques de Madrid» (madrid.es).",
+    "aseos": "Noticias Retiro, informe de la Asociación de Amigos del Buen Retiro (30/09/2025).",
+    "protocolo_nota": "Ayuntamiento de Madrid, nota de prensa del 18/06/2026 sobre los protocolos de parques.",
+    "estado_cierre": "Ayuntamiento de Madrid, «Estado de cierre y apertura de algunos parques en Madrid».",
+    "lista_restricciones": "Ayuntamiento de Madrid, lista de parques con restricciones por tipo de alerta (24/06/2026).",
 }
 
 
@@ -234,6 +240,224 @@ def documentos() -> dict[str, list[tuple[str, str]]]:
                   "de alquiler de bicicletas como Biciretiro, Bybike o 27Bikes, con un precio de "
                   "alrededor de 24 euros por día. Es un dato de 2017: la oferta y los precios "
                   "actuales pueden ser distintos."),
+        ],
+
+        "informacion_practica__guia_visitante__retiro__v01.pdf": [
+            ("h1", "Información práctica para visitar el Parque del Retiro (Madrid)"),
+            ("p", "Horarios, accesos, transporte, zonas, mascotas, servicios, actividades y lugares "
+                  "destacados del Parque del Retiro, también llamado Jardines del Buen Retiro."),
+
+            ("h2", "Horarios del Parque del Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Horario del parque. Abierto todos los días. De octubre a marzo (otoño e invierno): "
+                      "de 6:00 a 22:00. De abril a septiembre (primavera y verano): de 6:00 a 0:00 "
+                      "(medianoche). Entrada libre."),
+            ("p", "Las áreas caninas del parque abren a las 7:30 y cierran con el cierre del parque."),
+            ("p", "El horario puede verse alterado por el protocolo de alertas meteorológicas: con alerta "
+                  "roja el parque se cierra (ver el documento de seguridad del Retiro)."),
+
+            ("h2", "Horarios del Palacio de Velázquez y del Palacio de Cristal"),
+            ("src", f"Fuente: {FUENTES['reinasofia']}"),
+            ("ficha", "Horario de los palacios del Retiro, sedes expositivas del Museo Reina Sofía. De "
+                      "abril a septiembre: de 10:00 a 21:00. De octubre a marzo: de 10:00 a 18:00. Entrada "
+                      "gratuita. Las salas se desalojan 10 minutos antes del cierre."),
+            ("p", "Abren todos los días excepto el 1 y el 6 de enero, el 1 de mayo, el 25 de diciembre y "
+                  "los periodos de montaje de exposiciones. El 24 y el 31 de diciembre abren hasta las "
+                  "17:00. El Palacio de Cristal puede cerrar los días de lluvia y de alerta de calor por "
+                  "las características del edificio."),
+            ("p", "Estado en septiembre de 2026: el Palacio de Velázquez reabrió el miércoles 24 de "
+                  "junio. El Palacio de Cristal está cerrado temporalmente por mejoras arquitectónicas; "
+                  "se puede ver la instalación artística que lo recubre por fuera."),
+
+            ("h2", "Horarios y condiciones de actividades del Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("p", "Teatro de Títeres: programación estable todos los fines de semana."),
+            ("p", "Escuela Municipal de Piragüismo, en el Estanque Grande: para niños y jóvenes de 7 a "
+                  "17 años."),
+            ("p", "Foso de los monos, en la antigua Casa de Fieras: visitas en grupo con cita previa "
+                  "gestionadas por la dirección del parque."),
+            ("p", "Visitas guiadas gratuitas del programa municipal Pasea Madrid."),
+            ("p", "Audioguía oficial, disponible desde la primavera de 2026: recorrido de 38 puntos en "
+                  "español, inglés y lengua de signos, accesible mediante códigos QR y la web municipal."),
+            ("p", "Exposición temporal «Emociones en peligro. Fotografías de Tim Flach» en el parque, "
+                  "hasta el 25 de septiembre de 2026, según la agenda de esMadrid."),
+
+            ("h2", "Accesos y puertas del Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Accesos del parque. El Retiro tiene 18 entradas, de las cuales 14 son accesibles. "
+                      "Dirección postal de referencia: Plaza de la Independencia, 7, 28001 Madrid."),
+            ("p", "Mejoras de accesibilidad: bancos modelo Madrid que pueden usarse desde distintas "
+                  "alturas, acceso mejorado a la fuente de beber de la plaza de Honduras y pavimento "
+                  "renovado en los jardines de Herrero Palacios."),
+            ("p", "El nombre y la ubicación de cada una de las 18 puertas se describen en el documento "
+                  "de rutas a pie por el Retiro."),
+
+            ("h2", "Transporte para llegar al Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Metro: Retiro (línea 2), Ibiza (línea 9), Atocha (línea 1) y Estación del Arte "
+                      "(línea 1). Cercanías: Madrid-Atocha."),
+            ("p", "Autobuses: 001, 1, 2, 5, 9, 10, 14, 15, 19, 20, 26, 27, 28, 32, 34, 37, 45, 51, "
+                  "52, 53, 61, 63, 74, 146, 150, 152, 203, 215, C1, C2, C03 y E1. Búhos nocturnos: de "
+                  "N1 a N27."),
+            ("p", "Estaciones de BiciMAD cercanas: calle Valenzuela, 3; calle Antonio Maura, 13; calle "
+                  "Espalter, 3; Museo del Prado (calle Felipe IV, 5); Puerta del Ángel Caído (avenida "
+                  "de Alfonso XII, 54); Jardines de Cecilio Rodríguez (avenida de Menéndez Pelayo, 69); "
+                  "Puerta de la Reina Mercedes (avenida de Menéndez Pelayo, frente al 33); Hospital "
+                  "Niño Jesús (avenida de Menéndez Pelayo, 63); avenida de Menéndez Pelayo, 9; plaza de "
+                  "Mariano de Cavia; Metro Príncipe de Vergara; Metro Retiro (calle Alcalá, 95); calle "
+                  "Alcalá, 111; calle Ibiza, 16; y calle Pío Baroja, 8."),
+
+            ("h2", "Zonas y espacios del Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Dimensiones del parque: 125 hectáreas y más de 15.000 árboles. Patrimonio Mundial "
+                      "de la UNESCO, junto al Paseo del Prado, desde el 25 de julio de 2021 (Paisaje de "
+                      "la Luz)."),
+            ("p", "Jardines destacados: jardín de Vivaces; Jardines de Cecilio Rodríguez, clasicistas "
+                  "con aires andaluces; jardines del Arquitecto Herrero Palacios; Montaña de los Gatos, "
+                  "rehabilitada; la Rosaleda, con su colección de rosas; y el Parterre Francés, donde "
+                  "está el ahuehuete."),
+            ("p", "Reservado de Fernando VII, en la esquina de las calles O'Donnell y Menéndez Pelayo: "
+                  "incluye la Casa del Pescador, la Montaña de los Gatos (reabierta tras dos décadas "
+                  "cerrada) y la Casa del Contrabandista, que hoy acoge Florida Park, espacio de ocio y "
+                  "hostelería."),
+            ("p", "Entorno del Observatorio Meteorológico, rehabilitado: incluye un reservado, el jardín "
+                  "isabelino del Castillo del Telégrafo y el Baño de la Elefanta. En la Huerta del "
+                  "Francés está la noria de agua, restaurada y en funcionamiento."),
+            ("p", "Equipamientos dentro del parque: Centro Deportivo Municipal La Chopera, Biblioteca "
+                  "Pública Municipal Eugenio Trías y Centro Cultural Casa de Vacas."),
+
+            ("h2", "Mascotas en el Retiro: normas para perros"),
+            ("src", f"Fuentes: {FUENTES['perros']} {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Perros en los parques de Madrid. Con carácter general deben ir con correa. Pueden "
+                      "ir sueltos de 19:00 a 10:00 en el horario oficial de invierno y de 20:00 a 10:00 en "
+                      "el horario oficial de verano, siempre dentro del horario de apertura del parque."),
+            ("p", "En el Retiro, las áreas caninas abren de 7:30 hasta el cierre del parque."),
+            ("p", "Los perros no pueden entrar en zonas infantiles, zonas de mayores ni en las áreas "
+                  "donde se prohíba expresamente. Los perros calificados como potencialmente peligrosos "
+                  "deben llevar siempre correa y bozal en lugares públicos."),
+            ("p", "Cuando van sueltos, la persona responsable debe tenerlos a la vista y a una distancia "
+                  "que le permita intervenir. Está prohibido que se bañen en fuentes ornamentales o "
+                  "estanques y que beban directamente de grifos o caños de agua de uso público."),
+
+            ("h2", "Servicios del Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("ficha", "Servicios que indica esMadrid para el Retiro: alquiler de barcas, alquiler de "
+                      "bicicletas en los alrededores, biblioteca, cafetería, restauración y restaurante, "
+                      "circuito de running, puntos de información, senda botánica, visitas guiadas, zona "
+                      "de picnic y zona deportiva."),
+            ("p", "Para descansar hay quioscos y terrazas repartidos por el parque. Para ir con niños hay "
+                  "muchas áreas de juego infantil."),
+            ("p", "Información en los accesos: 22 paneles informativos muestran de forma permanente la "
+                  "información que afecta al funcionamiento del parque; cuando no hay alerta, enseñan un "
+                  "plano del Retiro con la ubicación del usuario y la hora."),
+            ("p", "Fuentes de beber: la fuente de la plaza de Honduras tiene el acceso adaptado."),
+            ("h3", "Aseos públicos del Retiro"),
+            ("src", f"Fuente: {FUENTES['aseos']}"),
+            ("p", "No se ha localizado un listado oficial de aseos. Según un informe de la Asociación de "
+                  "Amigos del Buen Retiro publicado en septiembre de 2025, el parque tenía 6 aseos "
+                  "públicos: 3 subterráneos, sin acceso accesible, y 3 en superficie. Entre los "
+                  "subterráneos cita los del Ángel Caído, la plaza de la Fuente de la Alcachofa y el "
+                  "Templete de la Música. El mismo informe describía instalaciones con desperfectos."),
+
+            ("h2", "Actividades que se pueden hacer en el Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("p", "Pasear y hacer deporte: el Retiro es uno de los lugares favoritos de Madrid para correr "
+                  "y patinar. Los circuitos de running se describen en el documento de circuitos para "
+                  "correr, y la normativa de bicicletas en el documento de bicicleta."),
+            ("p", "En el Estanque Grande se pueden alquilar barcas de remo y funciona la Escuela Municipal "
+                  "de Piragüismo."),
+            ("p", "Cultura: exposiciones en el Palacio de Velázquez, el Palacio de Cristal y el Centro "
+                  "Cultural Casa de Vacas; funciones en el Teatro de Títeres; visitas guiadas gratuitas y "
+                  "audioguía oficial."),
+            ("p", "Eventos anuales que se celebran en el parque: la Feria del Libro de Madrid (edición de "
+                  "2027 prevista entre mayo y junio, fechas por confirmar) y los fuegos artificiales de "
+                  "San Isidro."),
+            ("p", "Con alerta meteorológica naranja se suspenden los eventos al aire libre y con alerta "
+                  "roja el parque se cierra (ver el documento de seguridad del Retiro)."),
+
+            ("h2", "Lugares destacados para visitar y fotografiar en el Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']} esMadrid no los clasifica como «puntos "
+                    "fotográficos»: se recogen los elementos que destaca como imprescindibles."),
+            ("p", "Monumento a Alfonso XII, junto al Estanque Grande: obra del arquitecto José Grases "
+                  "Riera, con un mirador con vistas sobre la ciudad."),
+            ("p", "Palacio de Cristal: pabellón creado para la Exposición de Filipinas de 1887 y uno de los "
+                  "principales ejemplos de la arquitectura del hierro en España. En 2026 su interior está "
+                  "cerrado por obras y se puede ver la instalación artística exterior."),
+            ("p", "El Ángel Caído: según esMadrid, la única escultura del mundo que representa al diablo."),
+            ("p", "Fuente de los Galápagos, que conmemora el nacimiento de Isabel II; noria de agua de la "
+                  "Huerta del Francés; Ermita de San Pelayo y San Isidoro; y Montaña de los Gatos."),
+            ("p", "Árboles singulares: el ahuehuete del Parterre Francés, del que se dice que podría tener "
+                  "unos 400 años, y el olivo de 627 años (hacia 1396) plantado en una pradera próxima a la "
+                  "Puerta del Ángel Caído, que es hoy el árbol más antiguo del Retiro."),
+            ("p", "Otros lugares: la Rosaleda, el foso de los monos de la antigua Casa de Fieras y el Bosque "
+                  "del Recuerdo, en homenaje a las víctimas de los atentados del 11 de marzo de 2004."),
+        ],
+
+        "seguridad__protocolo_alertas__retiro__v01.pdf": [
+            ("h1", "Seguridad en el Parque del Retiro (Madrid): protocolo de alertas meteorológicas"),
+            ("p", "Qué es el protocolo de alertas del Retiro, qué pasa en cada nivel, cómo saber si hay una "
+                  "alerta activa y por qué existe."),
+
+            ("h2", "Qué es el protocolo de alertas meteorológicas del Retiro"),
+            ("src", f"Fuentes: {FUENTES['protocolo_nota']} {FUENTES['estado_cierre']}"),
+            ("ficha", "Protocolo de alertas del Retiro. Sirve para prevenir accidentes por caída de ramas o "
+                      "árboles y otros riesgos por rachas fuertes de viento, lluvia o nieve. Tiene cuatro "
+                      "niveles, según las previsiones de la Agencia Estatal de Meteorología (AEMET): "
+                      "verde, amarillo, naranja y rojo."),
+            ("p", "La versión vigente es el «protocolo del Retiro 2026». La Junta de Gobierno del "
+                  "Ayuntamiento de Madrid aprobó su modificación el 18 de junio de 2026; el Ayuntamiento "
+                  "publica el texto del protocolo con fecha 20 de junio de 2026."),
+
+            ("h2", "Umbrales de viento del protocolo del Retiro 2026"),
+            ("src", f"Fuente: {FUENTES['protocolo_nota']}"),
+            ("ficha", "Umbrales de viento 2026. Alerta naranja: rachas máximas de entre 45 y 60 km/h "
+                      "(antes, entre 40 y 55 km/h). Alerta roja: rachas a partir de 60 km/h (antes, más "
+                      "de 55 km/h); con alerta roja se cierra el parque."),
+            ("p", "El Ayuntamiento amplió estos umbrales para que el parque pueda permanecer abierto más "
+                  "días en verano sin reducir la seguridad. La nota oficial no detalla en esta "
+                  "modificación el umbral de la alerta amarilla."),
+
+            ("h2", "Qué ocurre en el Retiro con cada nivel de alerta"),
+            ("src", f"Fuentes: {FUENTES['estado_cierre']} {FUENTES['lista_restricciones']}"),
+            ("p", "Alerta verde: situación de normalidad."),
+            ("p", "Alerta amarilla (riesgo bajo): se restringe el acceso a las zonas infantiles, "
+                  "deportivas y de mayores, que se balizan. Según la página municipal de estado de los "
+                  "parques, también se restringe el acceso a los Jardines de Cecilio Rodríguez: solo se "
+                  "puede entrar al Pabellón, por la puerta del Paseo de Uruguay. Se recomienda no "
+                  "quedarse parado bajo los árboles."),
+            ("p", "Alerta naranja (riesgo moderado): se restringe el acceso a las áreas infantiles, "
+                  "deportivas y de mayores, al área canina, al Pinar de San Blas, al Cementerio, a los "
+                  "Planteles y a los Jardines de Cecilio Rodríguez y de Herrero Palacios. Se suspenden "
+                  "los eventos al aire libre."),
+            ("p", "Alerta roja (riesgo alto): se cierra el parque."),
+
+            ("h2", "Cómo saber si hay una alerta activa en el Retiro"),
+            ("src", f"Fuente: {FUENTES['esmadrid_retiro']}"),
+            ("p", "Los 22 paneles informativos de los accesos del parque anuncian las alertas en español y "
+                  "en inglés dos horas antes de que se activen."),
+            ("p", "El Ayuntamiento comunica las alertas en su cuenta oficial de X, @MADRID, y publica un "
+                  "mapa del estado de cierre y apertura de los parques en el geoportal municipal."),
+
+            ("h2", "Otros parques de Madrid afectados por el protocolo"),
+            ("src", f"Fuentes: {FUENTES['protocolo_nota']} {FUENTES['esmadrid_retiro']}"),
+            ("p", "El Capricho, la Fuente del Berro, la Quinta de Torre Arias, la Quinta de los Molinos y la "
+                  "Rosaleda del Parque del Oeste aplican los mismos umbrales que el Retiro, porque su "
+                  "arbolado es parecido."),
+            ("p", "El parque Juan Carlos I, el Juan Pablo II y el Lineal del Manzanares tienen otro "
+                  "protocolo: la alerta roja se activa con rachas por encima de 75 km/h y no se cierran, "
+                  "sino que se balizan las zonas sensibles."),
+            ("p", "La Dehesa de la Villa y el Parque del Oeste no están incluidos porque no se pueden "
+                  "cerrar; con alerta se aconseja extremar las precauciones y, con alerta roja, no "
+                  "visitarlos."),
+
+            ("h2", "Por qué existe el protocolo del Retiro"),
+            ("src", f"Fuente: {FUENTES['protocolo_nota']}"),
+            ("p", "El primer protocolo empezó a aplicarse en mayo de 2016, después de que un hombre de 38 "
+                  "años muriera por la caída de un árbol en el parque; un mes después una niña resultó "
+                  "herida en un episodio similar. En 2018 murió un niño por la caída de otro árbol, lo "
+                  "que llevó a actualizar la normativa."),
+            ("p", "Entre 2020 y 2025, el parque estuvo cerrado por alerta roja solo el 1 % del tiempo, "
+                  "pero en ese periodo se produjo el 38 % de todas las caídas: 60 árboles y 439 ramas."),
         ],
     }
 
