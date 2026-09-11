@@ -120,7 +120,10 @@ El corpus debe contener al menos dos formatos. Como orientación, se seleccionar
 | Archivo local | Categoría | Formato | Fuente | Descarga | Responsable | Estado |
 | --- | --- | --- | --- | --- | --- | --- |
 | itinerarios_pie_retiro_.pdf | itinerarios | PDF | esMadrid (lugares; recorrido propio del equipo); Una Ventana desde Madrid, Rutas Tranquilas Madrileñas, Wikipedia | 10/09/2026 | David | Por revisar |
-| itinerarios_running_retiro_.pdf | itinerarios | PDF | VG Running | 10/09/2026 | David | Por revisar | informacion_practica_bicicleta_retiro.pdf | informacion_practica | PDF | Ayuntamiento de Madrid, Madrid 360, Zona Retiro | 10/09/2026 | David | Por revisar |
+| itinerarios_running_retiro_.pdf | itinerarios | PDF | VG Running | 10/09/2026 | David | Por revisar |
+| informacion_practica_bicicleta_retiro.pdf | informacion_practica | PDF | Ayuntamiento de Madrid, Madrid 360, Zona Retiro | 10/09/2026 | David | Por revisar |
+| informacion_practica_guia_visitante_retiro.pdf | informacion_practica | PDF | esMadrid, Museo Reina Sofía, Ayuntamiento de Madrid, Noticias Retiro | 11/09/2026 | David | Por revisar |
+| seguridad_protocolo_alertas_retiro.pdf | seguridad | PDF | Ayuntamiento de Madrid, esMadrid | 11/09/2026 | David | Por revisar |
 
 
 
