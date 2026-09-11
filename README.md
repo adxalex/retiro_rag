@@ -118,3 +118,66 @@ PR de David     → revisa Alex
 - Chunks y fuentes visibles.
 - Tabla de métricas.
 - Ejemplo de abstención.
+
+
+### Modelos de Gemini
+
+El proyecto utiliza modelos distintos para generación y embeddings:
+
+- `gemini-2.5-flash` para generar respuestas.
+- `gemini-embedding-001` para crear los vectores del corpus y las consultas.
+
+Se utiliza `gemini-embedding-001` porque el pipeline actual procesa los chunks
+por lotes y espera recibir un vector independiente por cada texto enviado.
+Esto permite mantener una correspondencia directa entre `chunk_id` y vector.
+
+`gemini-embedding-2` se considera una posible evolución multimodal, pero no se
+adopta en el MVP porque su tratamiento de múltiples contenidos requiere revisar
+la estrategia de lotes y el formato de respuesta.
+
+La disponibilidad se comprueba mediante:
+
+    python -m scripts.validation.validate_gemini_models
+
+El validador consulta los modelos accesibles para la clave configurada y
+comprueba que admitan `generateContent` o `embedContent`. No modifica
+automáticamente la configuración.
+
+Si se cambia `EMBEDDING_MODEL`, debe regenerarse la colección de ChromaDB,
+porque pueden cambiar tanto la dimensión como el espacio semántico de los
+vectores.
+
+### Validación de modelos de Gemini
+
+Los modelos disponibles en Gemini pueden cambiar o quedar obsoletos. Para evitar que el pipeline falle por utilizar un identificador retirado, el proyecto incluye un validador que consulta los modelos disponibles para la clave configurada.
+
+El validador comprueba por separado que:
+
+- `LLM_MODEL` admite `generateContent`.
+- `EMBEDDING_MODEL` admite `embedContent`.
+- La autenticación mediante `GEMINI_API_KEY` funciona.
+- Los modelos configurados están disponibles para la cuenta utilizada.
+
+Antes de ejecutarlo, configura las variables en `.env`:
+
+```dotenv
+GEMINI_API_KEY=
+LLM_MODEL=gemini-2.5-flash
+EMBEDDING_MODEL=gemini-embedding-001
+
+Ejecuta la validación desde la raíz del repositorio:
+
+`python -m scripts.validation.validate_gemini_models`
+
+Para mostrar el informe completo y las alternativas disponibles:
+
+`python -m scripts.validation.validate_gemini_models --json`
+
+Si ambos modelos son compatibles, el comando finaliza correctamente. Si falta la clave, un modelo no existe o no admite la operación requerida, muestra un error y termina con código de salida 1.
+
+El validador no modifica automáticamente config.py ni sustituye modelos. La selección debe revisarse manualmente porque cambiar el modelo de embeddings puede alterar la dimensión y el espacio semántico de los vectores.
+
+Cuando se cambie EMBEDDING_MODEL, debe regenerarse la colección persistente de ChromaDB para evitar mezclar embeddings incompatibles.
+
+Para el MVP se utiliza gemini-embedding-001 porque devuelve un vector independiente por cada texto y mantiene la correspondencia entre chunks y vectores esperada por embed.py. Los modelos multimodales más recientes podrán evaluarse posteriormente como una evolución del sistema.
+

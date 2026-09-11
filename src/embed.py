@@ -9,6 +9,7 @@ from google import genai
 from google.genai import types
 
 from config import EMBED_BATCH_SIZE, EMBEDDING_MODEL
+from src.gemini_auth import get_gemini_client
 
 _DOCUMENT_TASK_TYPE = "RETRIEVAL_DOCUMENT"
 _QUERY_TASK_TYPE = "RETRIEVAL_QUERY"
@@ -108,7 +109,7 @@ def embed_chunks(
 
     _validar_chunks(chunks)
     _validar_batch_size()
-    client = client or genai.Client()
+    client = client if client is not None else get_gemini_client()
     textos = [chunk["text"].strip() for chunk in chunks]
 
     inicio = time.perf_counter()
@@ -153,7 +154,7 @@ def embed_query(
     """Genera el vector de una consulta en el espacio del índice documental."""
     if not isinstance(text, str) or not text.strip():
         raise ValueError("El texto de la consulta no puede estar vacío.")
-    client = client or genai.Client()
+    client = client if client is not None else get_gemini_client()
     return _embeddear_lote(
         client,
         [text.strip()],

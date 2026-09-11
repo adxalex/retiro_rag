@@ -9,9 +9,11 @@ DATA_DIR = "data"
 CHROMA_DIR = "chroma"
 COLLECTION_NAME = "retiro_madrid"
 
-# --- Modelos ---
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+# Modelos estables seleccionados para el MVP.
+# gemini-embedding-001 devuelve un vector por texto y mantiene compatibilidad
+# con el procesamiento por lotes actual de embed.py.
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
 
 # --- Chunking ---
 CHUNK_SIZE = 500
@@ -27,8 +29,8 @@ HNSW_SPACE = "cosine"  # métrica del índice (contrato compartido)
 # --- Retrieval ---
 TOP_K = 3
 
-# Límite opcional para el experimento de indexación.
-# None representa ausencia de límite.
-# Debe aplicarse mediante embed.limitar_chunks() en el futuro
-# orquestador chunk -> embed -> index.
+# Límite opcional para experimentos de indexación.
+# None indica que se procesa el corpus completo.
+# Si se establece un límite, el orquestador debe aplicarlo antes de generar
+# embeddings mediante embed.limitar_chunks().
 MAX_CHUNKS = None
