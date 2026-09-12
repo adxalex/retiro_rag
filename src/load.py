@@ -37,6 +37,10 @@ MANIFIESTO = {
         "category": "monumentos",
         "corpus_group": "historia_monumentos_jardines",
     },
+    "retiro_jardines_monumentos_folleto.pdf": {
+    "category": "monumentos",
+    "corpus_group": "historia_monumentos_jardines",
+    },
 }
 
 

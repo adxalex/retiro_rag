@@ -41,23 +41,25 @@ El corpus debe contener al menos dos formatos. Como orientación, se seleccionar
 ```markdown
 ### Título
 
-- Institución o autor:
-- URL:
-- Fecha de consulta o descarga:
-- Formato:
-- Nombre del archivo local:
-- Categoría:
-- `corpus_group`:
-- Motivo de inclusión:
-- Fecha de vigencia:
-- Observaciones de calidad:
+- Institución o autor: Ayuntamiento de Madrid — Patrimonio y Paisaje, iniciativa "Pasea Madrid".
+- URL: https://patrimonioypaisaje.madrid.es/FWProjects/monumenta/contenidos/ficheros/folleto_Jardines_Retiro_ESP.pdf
+- Fecha de consulta o descarga: 12/09/2026.
+- Formato: PDF (folleto oficial de turismo).
+- Nombre del archivo local: 'retiro_jardines_monumentos_folleto.pdf'
+- Categoría: monumentos
+- `corpus_group`: `historia_monumentos_jardines`
+- Motivo de inclusión: recorrido oficial con 16 puntos de interés del parque (Palacio de Cristal, Palacio de Velázquez, Fuente del Ángel Caído, La Rosaleda, entre otros) y contexto histórico de origen del parque como Real Sitio del Buen Retiro, incluida su declaración UNESCO en 2021.
+- Fecha de vigencia: contenido institucional sin fecha de actualización visible en el documento; información histórica estable.
+- Observaciones de calidad: es un folleto breve (1-2 páginas) orientado a visitantes, con duración estimada de recorrido, mapa y accesibilidad. No profundiza en detalles históricos extensos de cada monumento, es un resumen de itinerario.
 ```
 
 ## 7. Inventario
 
+### Jardines y monumentos del Parque del Retiro
+
 | Archivo local | Categoría   | Formato | Fuente    | Descarga  | Responsable | Estado      |
 | ------------- | ----------- | ------- | --------- | --------- | ----------- | ----------- |
-| Pendiente     | historia    | PDF     | Pendiente | Pendiente | Alex        | Por revisar |
+| retiro_jardines_monumentos_folleto.pdf | monumentos | PDF | Ayuntamiento de Madrid (Patrimonio y Paisaje) | 12/09/2026 | Alex | Por revisar |
 | Pendiente     | flora_fauna | PDF     | Pendiente | Pendiente | Alejandra   | Por revisar |
 | Pendiente     | itinerarios | MD/CSV  | Pendiente | Pendiente | David       | Por revisar |
 
