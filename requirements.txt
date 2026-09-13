@@ -1,10 +1,10 @@
 langchain
 langchain-community
 langchain-google-genai
+google-genai
 chromadb
 streamlit
 python-dotenv
 pypdf
 pandas
 requests
-chromadb
