@@ -49,6 +49,10 @@ MANIFIESTO = {
         "category": "arte_cultura",
         "corpus_group": "flora_fauna_arte_cultura_actividades",
     },
+    "flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
     "flora_fauna__guia_aves_comunes__madrid__v01.pdf": {
         "category": "flora_fauna",
         "corpus_group": "flora_fauna_arte_cultura_actividades",
