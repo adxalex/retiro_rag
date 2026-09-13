@@ -475,7 +475,7 @@ La batería actual incluye pruebas de:
 La rama de integración ha superado:
 
 ```text
-207 tests
+208 tests
 ```
 
 Los tests unitarios utilizan dobles, clientes simulados o colecciones temporales. No consumen la API salvo en los smoke tests explícitamente diseñados para ello.
