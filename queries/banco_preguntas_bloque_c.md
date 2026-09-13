@@ -41,9 +41,23 @@
 
 ## Resumen
 
-- Responde: 11 preguntas (1, 2, 4, 5, 6, 9, 10, 15, 16, 17, 19, 21, 25)
+- Responde: 13 preguntas (1, 2, 4, 5, 6, 9, 10, 15, 16, 17, 19, 21, 25)
 - Parcial: 2 preguntas (13, 23)
 - Abstención: 10 preguntas (3, 7, 8, 11, 12, 14, 18, 20, 22, 24)
+- Total: 25
+
+### Recall de la fuente esperada
+
+Denominador: las 15 preguntas con fuente declarada (13 responde + 2 parcial).
+Las 10 de abstención no cuentan, porque no tienen fuente esperada.
+
+| top_k | Recall | Preguntas |
+| --- | --- | --- |
+| 3 | 73 % | 11 de 15 |
+| 5 | 87 % | 13 de 15 |
+
+Medido con embeddings deterministas de juguete, no con gemini-embedding-001:
+sirve para comparar configuraciones, no para fijar el umbral de abstención.
 
 Distribución por categoría: historia, monumentos, jardines, itinerarios,
 información práctica y seguridad. Incluye preguntas conversacionales (23, 25) y
