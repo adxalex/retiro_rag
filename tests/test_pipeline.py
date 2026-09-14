@@ -186,6 +186,7 @@ def test_build_index_connects_embeddings_and_chroma(monkeypatch):
 
     embedding_client = object()
     chroma_client = object()
+    checkpoint = object()
     received = {}
 
     monkeypatch.setattr(
@@ -197,9 +198,14 @@ def test_build_index_connects_embeddings_and_chroma(monkeypatch):
         ),
     )
 
-    def fake_embed(input_chunks, client):
+    def fake_embed(
+        input_chunks,
+        client,
+        checkpoint=None,
+    ):
         received["embed_chunks"] = input_chunks
         received["embedding_client"] = client
+        received["checkpoint"] = checkpoint
         return deepcopy(embedded_chunks)
 
     def fake_index(input_chunks, recreate, client):
@@ -224,15 +230,104 @@ def test_build_index_connects_embeddings_and_chroma(monkeypatch):
         recreate=True,
         embedding_client=embedding_client,
         chroma_client=chroma_client,
+        checkpoint=checkpoint,
     )
 
     assert received["embed_chunks"] == chunks
     assert received["embedding_client"] is embedding_client
+    assert received["checkpoint"] is checkpoint
     assert received["index_chunks"] == embedded_chunks
     assert received["recreate"] is True
     assert received["chroma_client"] is chroma_client
     assert report["indexed"] is True
     assert report["collection_count"] == 2
+
+
+# Comprueba que el pipeline crea el checkpoint configurado automáticamente.
+def test_build_index_creates_configured_checkpoint(
+    monkeypatch,
+    tmp_path,
+):
+    documents = make_documents()
+    chunks = make_chunks()
+    embedded_chunks = [
+        {
+            **chunk,
+            "vector": [0.1, 0.2, 0.3],
+        }
+        for chunk in chunks
+    ]
+    checkpoint_path = tmp_path / "embeddings.json"
+    received = {}
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "prepare_corpus",
+        lambda data_dir: (
+            deepcopy(documents),
+            deepcopy(chunks),
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "EMBED_RESUME",
+        True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "EMBED_CHECKPOINT_PATH",
+        str(checkpoint_path),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "EMBEDDING_MODEL",
+        "gemini-embedding-001",
+        raising=False,
+    )
+
+    class FakeCheckpoint:
+        def __init__(self, path, model):
+            received["checkpoint_path"] = path
+            received["checkpoint_model"] = model
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "EmbeddingCheckpoint",
+        FakeCheckpoint,
+        raising=False,
+    )
+
+    def fake_embed(
+        input_chunks,
+        client,
+        checkpoint=None,
+    ):
+        received["checkpoint"] = checkpoint
+        return deepcopy(embedded_chunks)
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "embed_chunks",
+        fake_embed,
+    )
+    monkeypatch.setattr(
+        pipeline_module,
+        "index_chunks",
+        lambda input_chunks, recreate, client: len(input_chunks),
+    )
+
+    report = pipeline_module.build_index(
+        "data-test",
+        embedding_client=object(),
+        chroma_client=object(),
+    )
+
+    assert received["checkpoint_path"] == str(checkpoint_path)
+    assert received["checkpoint_model"] == "gemini-embedding-001"
+    assert isinstance(received["checkpoint"], FakeCheckpoint)
+    assert report["indexed"] is True
 
 
 # Comprueba que la interfaz pueda presentar el informe como JSON.

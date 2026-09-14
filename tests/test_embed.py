@@ -5,6 +5,7 @@ import pytest
 
 import src.embed as embed_module
 from src.embed import embed_chunks, embed_query, limitar_chunks
+from src.embedding_cache import EmbeddingCheckpoint
 
 
 def make_chunk(index: int, group: str = "grupo_a") -> dict:
@@ -325,6 +326,167 @@ def test_embed_chunks_rejects_response_without_embeddings():
         embed_chunks([make_chunk(0)], client=client)
 
 
+# Comprueba que un error 429 reintenta únicamente el lote afectado.
+def test_retry_batch_after_rate_limit(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+
+        if len(calls) == 1:
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+        return [[0.1, 0.2, 0.3]]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        2,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_RETRY_DELAY_SECONDS",
+        0.25,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    client = object()
+
+    result = embed_module._embeddear_lote_con_reintentos(
+        client,
+        ["texto de prueba"],
+        task_type="RETRIEVAL_DOCUMENT",
+    )
+
+    assert result == [[0.1, 0.2, 0.3]]
+    assert len(calls) == 2
+    assert sleeps == [0.25]
+
+
+# Comprueba que los errores distintos de 429 no se reintentan.
+def test_retry_batch_does_not_retry_other_errors(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+        raise ValueError("Respuesta de embeddings inválida.")
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        3,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Respuesta de embeddings inválida",
+    ):
+        embed_module._embeddear_lote_con_reintentos(
+            object(),
+            ["texto de prueba"],
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+
+    assert len(calls) == 1
+    assert sleeps == []
+
+
+# Comprueba que el lote falla al agotar el máximo de reintentos.
+def test_retry_batch_stops_after_maximum_retries(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        2,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_RETRY_DELAY_SECONDS",
+        0.5,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="429 RESOURCE_EXHAUSTED",
+    ):
+        embed_module._embeddear_lote_con_reintentos(
+            object(),
+            ["texto de prueba"],
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+
+    assert len(calls) == 3
+    assert sleeps == [0.5, 0.5]
+
+
+# Comprueba que la detección reconoce las formas habituales del error de cuota.
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("429"),
+        RuntimeError("429 RESOURCE_EXHAUSTED"),
+        RuntimeError("Quota exceeded: RESOURCE_EXHAUSTED"),
+    ],
+)
+def test_rate_limit_error_detection_by_message(error):
+    assert embed_module._es_error_de_cuota(error) is True
+
+# Comprueba que un status_code 429 se reconoce aunque cambie el mensaje.
+
+
+def test_rate_limit_error_detection_by_status_code():
+    class FakeRateLimitError(Exception):
+        status_code = 429
+
+    error = FakeRateLimitError("límite temporal")
+
+    assert embed_module._es_error_de_cuota(error) is True
+
+
+# Comprueba que un error normal no se confunde con un límite de cuota.
+def test_rate_limit_error_detection_rejects_other_errors():
+    error = RuntimeError("Error interno del proveedor.")
+
+    assert embed_module._es_error_de_cuota(error) is False
+
+
 # Comprueba que None conserva todos los chunks sin reutilizar la lista.
 def test_limitar_chunks_with_none_keeps_all_chunks():
     chunks = [make_chunk(0), make_chunk(1)]
@@ -391,3 +553,173 @@ def test_limitar_chunks_rejects_invalid_group_field(agrupar_por):
             max_chunks=1,
             agrupar_por=agrupar_por,
         )
+
+
+# Comprueba que los vectores almacenados evitan nuevas llamadas a Gemini.
+def test_embed_chunks_reuses_all_cached_vectors(tmp_path):
+    chunks = [make_chunk(0), make_chunk(1)]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        chunks,
+        [[0.1, 0.2], [0.3, 0.4]],
+    )
+
+    class ModelsThatMustNotBeCalled:
+        def embed_content(self, **kwargs):
+            raise AssertionError("Gemini no debería ser llamado.")
+
+    client = FakeClient(models=ModelsThatMustNotBeCalled())
+
+    result = embed_chunks(
+        chunks,
+        client=client,
+        checkpoint=checkpoint,
+    )
+
+    assert [item["vector"] for item in result] == [
+        [0.1, 0.2],
+        [0.3, 0.4],
+    ]
+
+
+# Comprueba que solo se solicitan a Gemini los chunks no almacenados.
+def test_embed_chunks_only_requests_missing_vectors(
+    tmp_path,
+    monkeypatch,
+):
+    chunks = [
+        make_chunk(0),
+        make_chunk(1),
+        make_chunk(2),
+    ]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        [chunks[0], chunks[2]],
+        [[0.1, 0.2], [0.5, 0.6]],
+    )
+
+    calls = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append(list(texts))
+        return [[0.3, 0.4] for _ in texts]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    result = embed_chunks(
+        chunks,
+        client=object(),
+        checkpoint=checkpoint,
+    )
+
+    assert calls == [[chunks[1]["text"]]]
+    assert [item["vector"] for item in result] == [
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [0.5, 0.6],
+    ]
+
+
+# Comprueba que los resultados conservan el orden original al mezclar
+# vectores recuperados y recién generados.
+def test_embed_chunks_preserves_order_when_resuming(tmp_path, monkeypatch):
+    chunks = [make_chunk(0), make_chunk(1), make_chunk(2)]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        [chunks[1]],
+        [[1.0, 1.0]],
+    )
+
+    generated_vectors = iter([
+        [0.0, 0.0],
+        [2.0, 2.0],
+    ])
+
+    def fake_embed_batch(client, texts, task_type):
+        return [
+            next(generated_vectors)
+            for _ in texts
+        ]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    result = embed_chunks(
+        chunks,
+        client=object(),
+        checkpoint=checkpoint,
+    )
+
+    assert [item["vector"] for item in result] == [
+        [0.0, 0.0],
+        [1.0, 1.0],
+        [2.0, 2.0],
+    ]
+
+
+# Comprueba que un lote completado queda guardado aunque falle el siguiente.
+def test_embed_chunks_keeps_completed_batches_after_failure(
+    tmp_path,
+    monkeypatch,
+):
+    chunks = [make_chunk(0), make_chunk(1)]
+    path = tmp_path / "embeddings.json"
+    checkpoint = EmbeddingCheckpoint(
+        path=path,
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    calls = 0
+
+    def fake_embed_batch(client, texts, task_type):
+        nonlocal calls
+        calls += 1
+
+        if calls == 1:
+            return [[0.1, 0.2]]
+
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_BATCH_SIZE",
+        1,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Falló el lote de embeddings 2",
+    ):
+        embed_chunks(
+            chunks,
+            client=object(),
+            checkpoint=checkpoint,
+        )
+
+    reloaded = EmbeddingCheckpoint(
+        path=path,
+        model=embed_module.EMBEDDING_MODEL,
+    )
+
+    assert reloaded.get(chunks[0]) == [0.1, 0.2]
+    assert reloaded.get(chunks[1]) is None

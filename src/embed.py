@@ -8,11 +8,50 @@ from typing import Any
 from google import genai
 from google.genai import types
 
-from config import EMBED_BATCH_SIZE, EMBEDDING_MODEL
+from config import (
+    EMBED_BATCH_SIZE,
+    EMBEDDING_MODEL,
+    EMBED_MAX_RETRIES,
+    EMBED_RETRY_DELAY_SECONDS,
+)
 from src.gemini_auth import get_gemini_client
+from src.embedding_cache import EmbeddingCheckpoint
 
 _DOCUMENT_TASK_TYPE = "RETRIEVAL_DOCUMENT"
 _QUERY_TASK_TYPE = "RETRIEVAL_QUERY"
+
+
+def _es_error_de_cuota(error: Exception) -> bool:
+    """Indica si Gemini rechazó temporalmente la petición por cuota."""
+    status_code = getattr(error, "status_code", None)
+    return (
+        status_code == 429
+        or "RESOURCE_EXHAUSTED" in str(error)
+        or "429" in str(error)
+    )
+
+
+def _validar_configuracion_reintentos() -> None:
+    """Valida los parámetros utilizados para recuperar errores de cuota."""
+    if (
+        not isinstance(EMBED_MAX_RETRIES, int)
+        or isinstance(EMBED_MAX_RETRIES, bool)
+        or EMBED_MAX_RETRIES < 0
+    ):
+        raise ValueError(
+            "EMBED_MAX_RETRIES debe ser un entero mayor o igual que 0."
+        )
+
+    if (
+        not isinstance(EMBED_RETRY_DELAY_SECONDS, (int, float))
+        or isinstance(EMBED_RETRY_DELAY_SECONDS, bool)
+        or not math.isfinite(EMBED_RETRY_DELAY_SECONDS)
+        or EMBED_RETRY_DELAY_SECONDS < 0
+    ):
+        raise ValueError(
+            "EMBED_RETRY_DELAY_SECONDS debe ser un número finito "
+            "mayor o igual que 0."
+        )
 
 
 def _extraer_vector(embedding_obj: Any) -> list[float]:
@@ -74,6 +113,37 @@ def _embeddear_lote(
     return vectores
 
 
+def _embeddear_lote_con_reintentos(
+    client: genai.Client,
+    textos: list[str],
+    task_type: str,
+) -> list[list[float]]:
+    """Reintenta el lote actual cuando Gemini devuelve un error 429."""
+    intento = 0
+
+    while True:
+        try:
+            return _embeddear_lote(
+                client,
+                textos,
+                task_type=task_type,
+            )
+        except Exception as error:
+            if not _es_error_de_cuota(error):
+                raise
+
+            if intento >= EMBED_MAX_RETRIES:
+                raise
+
+            intento += 1
+            print(
+                "[EMBED] cuota temporal agotada; "
+                f"esperando {EMBED_RETRY_DELAY_SECONDS:.0f} s "
+                f"antes del reintento {intento}/{EMBED_MAX_RETRIES}"
+            )
+            time.sleep(EMBED_RETRY_DELAY_SECONDS)
+
+
 def _validar_chunks(chunks: list[dict]) -> None:
     for posicion, chunk in enumerate(chunks):
         if not isinstance(chunk, dict):
@@ -102,38 +172,127 @@ def _validar_batch_size() -> None:
 def embed_chunks(
     chunks: list[dict],
     client: genai.Client | None = None,
+    checkpoint: EmbeddingCheckpoint | None = None,
 ) -> list[dict]:
-    """Añade un vector a cada chunk sin mutar ni alterar el orden de entrada."""
+    """Añade un vector a cada chunk, reutilizando checkpoints válidos.
+
+    Los embeddings recuperados y los recién generados se devuelven en el
+    mismo orden que los chunks de entrada. Cada lote nuevo se guarda en el
+    checkpoint inmediatamente después de validarlo.
+    """
     if not chunks:
         return []
 
     _validar_chunks(chunks)
     _validar_batch_size()
-    client = client if client is not None else get_gemini_client()
-    textos = [chunk["text"].strip() for chunk in chunks]
+    _validar_configuracion_reintentos()
 
     inicio = time.perf_counter()
-    vectores: list[list[float]] = []
-    for numero_lote, posicion in enumerate(
-        range(0, len(textos), EMBED_BATCH_SIZE),
+
+    vectores_por_posicion: list[list[float] | None] = [
+        None
+        for _ in chunks
+    ]
+    pendientes: list[tuple[int, dict]] = []
+    reutilizados = 0
+
+    for posicion, chunk in enumerate(chunks):
+        vector_guardado = (
+            checkpoint.get(chunk)
+            if checkpoint is not None
+            else None
+        )
+
+        if vector_guardado is None:
+            pendientes.append((posicion, chunk))
+        else:
+            vectores_por_posicion[posicion] = vector_guardado
+            reutilizados += 1
+
+    if pendientes:
+        client = (
+            client
+            if client is not None
+            else get_gemini_client()
+        )
+
+    generados = 0
+
+    for numero_lote, inicio_lote in enumerate(
+        range(0, len(pendientes), EMBED_BATCH_SIZE),
         start=1,
     ):
-        lote = textos[posicion: posicion + EMBED_BATCH_SIZE]
+        elementos_lote = pendientes[
+            inicio_lote: inicio_lote + EMBED_BATCH_SIZE
+        ]
+        chunks_lote = [
+            chunk
+            for _, chunk in elementos_lote
+        ]
+        textos_lote = [
+            chunk["text"].strip()
+            for chunk in chunks_lote
+        ]
+
         try:
-            vectores.extend(
-                _embeddear_lote(client, lote, task_type=_DOCUMENT_TASK_TYPE)
+            vectores_lote = _embeddear_lote_con_reintentos(
+                client,
+                textos_lote,
+                task_type=_DOCUMENT_TASK_TYPE,
             )
+
+            if checkpoint is not None:
+                checkpoint.save_batch(
+                    chunks_lote,
+                    vectores_lote,
+                )
+
+            for (
+                posicion_original,
+                _,
+            ), vector in zip(
+                elementos_lote,
+                vectores_lote,
+                strict=True,
+            ):
+                vectores_por_posicion[posicion_original] = vector
+
+            generados += len(vectores_lote)
+
         except Exception as error:
+            inicio_pendiente = inicio_lote
+            final_pendiente = inicio_lote + len(elementos_lote)
+
             raise RuntimeError(
                 f"Falló el lote de embeddings {numero_lote} "
-                f"(chunks {posicion}:{posicion + len(lote)})."
+                f"(chunks pendientes "
+                f"{inicio_pendiente}:{final_pendiente})."
             ) from error
 
-    dimension = _validar_vectores(vectores, esperados=len(chunks))
+    if any(vector is None for vector in vectores_por_posicion):
+        raise RuntimeError(
+            "No se obtuvo un vector para todos los chunks."
+        )
+
+    vectores = [
+        vector
+        for vector in vectores_por_posicion
+        if vector is not None
+    ]
+
+    dimension = _validar_vectores(
+        vectores,
+        esperados=len(chunks),
+    )
     latencia_ms = (time.perf_counter() - inicio) * 1000
+
     print(
-        f"[EMBED] {len(chunks)} chunks · modelo={EMBEDDING_MODEL} · "
-        f"dim={dimension} · {latencia_ms:.0f} ms"
+        f"[EMBED] {len(chunks)} chunks · "
+        f"reutilizados={reutilizados} · "
+        f"generados={generados} · "
+        f"modelo={EMBEDDING_MODEL} · "
+        f"dim={dimension} · "
+        f"{latencia_ms:.0f} ms"
     )
 
     return [
@@ -143,7 +302,11 @@ def embed_chunks(
             "embedding_model": EMBEDDING_MODEL,
             "embedding_dimension": dimension,
         }
-        for chunk, vector in zip(chunks, vectores, strict=True)
+        for chunk, vector in zip(
+            chunks,
+            vectores,
+            strict=True,
+        )
     ]
 
 
