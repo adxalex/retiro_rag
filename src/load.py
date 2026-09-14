@@ -36,8 +36,39 @@ MANIFIESTO = {
     "retiro_palacio_cristal_velazquez.md": {
         "category": "monumentos",
         "corpus_group": "historia_monumentos_jardines",
-
-    }, 
+    },
+    "actividades__guia_retiro__fuentes_mixtas__v01.md": {
+        "category": "actividades",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md": {
+        "category": "arte_cultura",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "arte_cultura__retiro_paisaje_de_la_luz__fuentes_academicas_unesco__v01.md": {
+        "category": "arte_cultura",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "flora_fauna__guia_aves_comunes__madrid__v01.pdf": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "flora_fauna__plan_director_arbolado__madrid__v01.pdf": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "flora_fauna__resumen_inventario_arbolado_retiro__madrid__v01.md": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
+    "flora_fauna__senda_botanica__madrid__v01.pdf": {
+        "category": "flora_fauna",
+        "corpus_group": "flora_fauna_arte_cultura_actividades",
+    },
     "itinerarios_pie_retiro_.pdf": {
         "category": "itinerarios",
         "corpus_group": "itinerarios_informacion_practica_seguridad",
@@ -79,7 +110,8 @@ def _validar_categoria(category: str, corpus_group: str, origen: str) -> None:
     if category not in CATEGORIAS_VALIDAS:
         raise ValueError(f"category invalida en {origen}: {category!r}")
     if corpus_group not in CORPUS_GROUPS_VALIDOS:
-        raise ValueError(f"corpus_group invalido en {origen}: {corpus_group!r}")
+        raise ValueError(
+            f"corpus_group invalido en {origen}: {corpus_group!r}")
 
 
 def _leer_markdown(ruta: Path) -> list[dict]:
@@ -131,7 +163,8 @@ def _leer_pdf(ruta: Path) -> list[dict]:
         })
 
     if not documentos:
-        raise ValueError(f"{ruta.name} no tiene texto extraible en ninguna pagina")
+        raise ValueError(
+            f"{ruta.name} no tiene texto extraible en ninguna pagina")
 
     return documentos
 
@@ -196,7 +229,8 @@ def load_documents(data_dir: str) -> list[dict]:
         for doc in _extract_text(ruta):
             clave = (doc["document_id"], doc.get("page"))
             if clave in ids_vistos:
-                raise ValueError(f"Combinacion document_id+page duplicada: {clave}")
+                raise ValueError(
+                    f"Combinacion document_id+page duplicada: {clave}")
             ids_vistos.add(clave)
             documentos.append(doc)
 
@@ -207,4 +241,5 @@ if __name__ == "__main__":
     docs = load_documents("data")
     print(f"Documentos cargados: {len(docs)}")
     for d in docs:
-        print(f"  - {d['document_id']} ({d['category']}, {len(d['text'])} chars)")
+        print(
+            f"  - {d['document_id']} ({d['category']}, {len(d['text'])} chars)")

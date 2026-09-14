@@ -268,6 +268,16 @@ indica la fuente que trabaja en Madrid?
 **Prioridad:** baja para la evaluación final, por su escasa relación directa con
 la experiencia turística de El Retiro.
 
+### VEG-24 — Directa
+
+**Pregunta:** ¿Qué fauna piscícola predomina en el Estanque Grande del Retiro?
+
+**Fuente esperada:** flora_fauna**fauna_estanque_grande_retiro**fuentes_contrastadas\_\_v01.md
+
+**Hechos requeridos:** carpas.
+
+**Información complementaria:** también se han documentado peces gato y percasoles.
+
 ## Arte y cultura
 
 ### ART-01 — Directa
@@ -591,10 +601,7 @@ Cada caso automatizado debe contener como mínimo:
   "expected_document_ids": [
     "arte_cultura__retiro_paisaje_de_la_luz__fuentes_academicas_unesco__v01"
   ],
-  "required_facts": [
-    ["2021"],
-    ["paisaje cultural"]
-  ],
+  "required_facts": [["2021"], ["paisaje cultural"]],
   "expected_abstention": false
 }
 ```
