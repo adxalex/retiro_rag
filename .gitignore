@@ -6,3 +6,5 @@ chroma/
 output/
 .DS_Store
 *.egg-info/
+
+probar_cli.py

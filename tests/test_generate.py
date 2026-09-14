@@ -273,3 +273,29 @@ def test_rag_ask_devuelve_el_mensaje_de_abstencion():
         score_minimo=0.30,
     )
     assert texto == MENSAJE_ABSTENCION
+
+
+# --- integracion con el logging ------------------------------------------
+
+
+def test_responder_registra_la_consulta(tmp_path, monkeypatch):
+    """Cada llamada a responder() deja una linea en el fichero de registro."""
+    import json
+
+    from src import logging_utils
+
+    ruta = tmp_path / "consultas.jsonl"
+    monkeypatch.setattr(logging_utils, "RUTA_LOG", ruta)
+
+    responder("¿A que hora cierra?", collection=ColeccionFalsa([chunk(0.82)]),
+              client=ClienteFalso(), score_minimo=0.30)
+    responder("¿Que fauna hay?", collection=ColeccionFalsa([chunk(0.05)]),
+              client=ClienteFalso(), score_minimo=0.30)
+
+    registros = [json.loads(l) for l in ruta.read_text(encoding="utf-8").splitlines()]
+    assert len(registros) == 2
+    assert registros[0]["abstuvo"] is False
+    assert registros[1]["abstuvo"] is True
+    assert "score_bajo" in registros[1]["motivo_abstencion"]
+    assert registros[0]["score_top1"] == pytest.approx(0.82)
+    assert registros[0]["tiempo_s"] >= 0
