@@ -29,6 +29,17 @@ EMBED_RETRY_DELAY_SECONDS = float(
     os.getenv("EMBED_RETRY_DELAY_SECONDS", "60")
 )
 
+# Checkpoint local para reanudar indexaciones interrumpidas.
+EMBED_CHECKPOINT_PATH = os.getenv(
+    "EMBED_CHECKPOINT_PATH",
+    ".cache/embeddings/retiro_madrid.json",
+)
+
+EMBED_RESUME = (
+    os.getenv("EMBED_RESUME", "true").strip().lower()
+    in {"1", "true", "yes", "on"}
+)
+
 # --- Indexación ---
 INDEX_BATCH_SIZE = 100  # vectores por lote en collection.upsert()
 HNSW_SPACE = "cosine"  # métrica del índice (contrato compartido)

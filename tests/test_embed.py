@@ -5,6 +5,7 @@ import pytest
 
 import src.embed as embed_module
 from src.embed import embed_chunks, embed_query, limitar_chunks
+from src.embedding_cache import EmbeddingCheckpoint
 
 
 def make_chunk(index: int, group: str = "grupo_a") -> dict:
@@ -552,3 +553,173 @@ def test_limitar_chunks_rejects_invalid_group_field(agrupar_por):
             max_chunks=1,
             agrupar_por=agrupar_por,
         )
+
+
+# Comprueba que los vectores almacenados evitan nuevas llamadas a Gemini.
+def test_embed_chunks_reuses_all_cached_vectors(tmp_path):
+    chunks = [make_chunk(0), make_chunk(1)]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        chunks,
+        [[0.1, 0.2], [0.3, 0.4]],
+    )
+
+    class ModelsThatMustNotBeCalled:
+        def embed_content(self, **kwargs):
+            raise AssertionError("Gemini no debería ser llamado.")
+
+    client = FakeClient(models=ModelsThatMustNotBeCalled())
+
+    result = embed_chunks(
+        chunks,
+        client=client,
+        checkpoint=checkpoint,
+    )
+
+    assert [item["vector"] for item in result] == [
+        [0.1, 0.2],
+        [0.3, 0.4],
+    ]
+
+
+# Comprueba que solo se solicitan a Gemini los chunks no almacenados.
+def test_embed_chunks_only_requests_missing_vectors(
+    tmp_path,
+    monkeypatch,
+):
+    chunks = [
+        make_chunk(0),
+        make_chunk(1),
+        make_chunk(2),
+    ]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        [chunks[0], chunks[2]],
+        [[0.1, 0.2], [0.5, 0.6]],
+    )
+
+    calls = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append(list(texts))
+        return [[0.3, 0.4] for _ in texts]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    result = embed_chunks(
+        chunks,
+        client=object(),
+        checkpoint=checkpoint,
+    )
+
+    assert calls == [[chunks[1]["text"]]]
+    assert [item["vector"] for item in result] == [
+        [0.1, 0.2],
+        [0.3, 0.4],
+        [0.5, 0.6],
+    ]
+
+
+# Comprueba que los resultados conservan el orden original al mezclar
+# vectores recuperados y recién generados.
+def test_embed_chunks_preserves_order_when_resuming(tmp_path, monkeypatch):
+    chunks = [make_chunk(0), make_chunk(1), make_chunk(2)]
+    checkpoint = EmbeddingCheckpoint(
+        path=tmp_path / "embeddings.json",
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    checkpoint.save_batch(
+        [chunks[1]],
+        [[1.0, 1.0]],
+    )
+
+    generated_vectors = iter([
+        [0.0, 0.0],
+        [2.0, 2.0],
+    ])
+
+    def fake_embed_batch(client, texts, task_type):
+        return [
+            next(generated_vectors)
+            for _ in texts
+        ]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    result = embed_chunks(
+        chunks,
+        client=object(),
+        checkpoint=checkpoint,
+    )
+
+    assert [item["vector"] for item in result] == [
+        [0.0, 0.0],
+        [1.0, 1.0],
+        [2.0, 2.0],
+    ]
+
+
+# Comprueba que un lote completado queda guardado aunque falle el siguiente.
+def test_embed_chunks_keeps_completed_batches_after_failure(
+    tmp_path,
+    monkeypatch,
+):
+    chunks = [make_chunk(0), make_chunk(1)]
+    path = tmp_path / "embeddings.json"
+    checkpoint = EmbeddingCheckpoint(
+        path=path,
+        model=embed_module.EMBEDDING_MODEL,
+    )
+    calls = 0
+
+    def fake_embed_batch(client, texts, task_type):
+        nonlocal calls
+        calls += 1
+
+        if calls == 1:
+            return [[0.1, 0.2]]
+
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_BATCH_SIZE",
+        1,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote_con_reintentos",
+        fake_embed_batch,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Falló el lote de embeddings 2",
+    ):
+        embed_chunks(
+            chunks,
+            client=object(),
+            checkpoint=checkpoint,
+        )
+
+    reloaded = EmbeddingCheckpoint(
+        path=path,
+        model=embed_module.EMBEDDING_MODEL,
+    )
+
+    assert reloaded.get(chunks[0]) == [0.1, 0.2]
+    assert reloaded.get(chunks[1]) is None
