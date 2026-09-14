@@ -9,6 +9,7 @@ Ejemplos:
     python main.py --ask   "¿A que hora cierra el parque?"
     python main.py --ask   "..." --top-k 5 --category seguridad
     python main.py --ask   "..." --json     # salida JSON, para scripts
+    python main.py --saludo                # tiempo actual del Retiro (AEMET)
 
 --query solo recupera fragmentos (util para depurar el retrieval).
 --ask ejecuta el flujo completo y puede abstenerse si no hay evidencia.
@@ -151,12 +152,19 @@ def main() -> int:
                         help="Con --ask, muestra tambien los fragmentos usados")
     parser.add_argument("--json", action="store_true",
                         help="Salida en JSON en lugar de texto")
+    parser.add_argument("--saludo", action="store_true",
+                        help="Muestra el saludo con el tiempo actual del Retiro")
     args = parser.parse_args()
 
     if args.top_k <= 0:
         parser.error("--top-k debe ser mayor que 0.")
 
     try:
+        if args.saludo:
+            from src.contexto_visita import saludo_contextual, texto_de_bienvenida
+
+            print(texto_de_bienvenida(saludo_contextual()))
+            return 0
         if args.index:
             return cmd_index(recreate=not args.keep_index, dry_run=args.dry_run)
         if args.query:
