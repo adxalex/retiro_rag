@@ -325,6 +325,167 @@ def test_embed_chunks_rejects_response_without_embeddings():
         embed_chunks([make_chunk(0)], client=client)
 
 
+# Comprueba que un error 429 reintenta únicamente el lote afectado.
+def test_retry_batch_after_rate_limit(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+
+        if len(calls) == 1:
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+        return [[0.1, 0.2, 0.3]]
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        2,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_RETRY_DELAY_SECONDS",
+        0.25,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    client = object()
+
+    result = embed_module._embeddear_lote_con_reintentos(
+        client,
+        ["texto de prueba"],
+        task_type="RETRIEVAL_DOCUMENT",
+    )
+
+    assert result == [[0.1, 0.2, 0.3]]
+    assert len(calls) == 2
+    assert sleeps == [0.25]
+
+
+# Comprueba que los errores distintos de 429 no se reintentan.
+def test_retry_batch_does_not_retry_other_errors(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+        raise ValueError("Respuesta de embeddings inválida.")
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        3,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Respuesta de embeddings inválida",
+    ):
+        embed_module._embeddear_lote_con_reintentos(
+            object(),
+            ["texto de prueba"],
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+
+    assert len(calls) == 1
+    assert sleeps == []
+
+
+# Comprueba que el lote falla al agotar el máximo de reintentos.
+def test_retry_batch_stops_after_maximum_retries(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_embed_batch(client, texts, task_type):
+        calls.append((client, texts, task_type))
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(
+        embed_module,
+        "_embeddear_lote",
+        fake_embed_batch,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_MAX_RETRIES",
+        2,
+    )
+    monkeypatch.setattr(
+        embed_module,
+        "EMBED_RETRY_DELAY_SECONDS",
+        0.5,
+    )
+    monkeypatch.setattr(
+        embed_module.time,
+        "sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="429 RESOURCE_EXHAUSTED",
+    ):
+        embed_module._embeddear_lote_con_reintentos(
+            object(),
+            ["texto de prueba"],
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+
+    assert len(calls) == 3
+    assert sleeps == [0.5, 0.5]
+
+
+# Comprueba que la detección reconoce las formas habituales del error de cuota.
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("429"),
+        RuntimeError("429 RESOURCE_EXHAUSTED"),
+        RuntimeError("Quota exceeded: RESOURCE_EXHAUSTED"),
+    ],
+)
+def test_rate_limit_error_detection_by_message(error):
+    assert embed_module._es_error_de_cuota(error) is True
+
+# Comprueba que un status_code 429 se reconoce aunque cambie el mensaje.
+
+
+def test_rate_limit_error_detection_by_status_code():
+    class FakeRateLimitError(Exception):
+        status_code = 429
+
+    error = FakeRateLimitError("límite temporal")
+
+    assert embed_module._es_error_de_cuota(error) is True
+
+
+# Comprueba que un error normal no se confunde con un límite de cuota.
+def test_rate_limit_error_detection_rejects_other_errors():
+    error = RuntimeError("Error interno del proveedor.")
+
+    assert embed_module._es_error_de_cuota(error) is False
+
+
 # Comprueba que None conserva todos los chunks sin reutilizar la lista.
 def test_limitar_chunks_with_none_keeps_all_chunks():
     chunks = [make_chunk(0), make_chunk(1)]

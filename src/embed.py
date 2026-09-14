@@ -8,11 +8,49 @@ from typing import Any
 from google import genai
 from google.genai import types
 
-from config import EMBED_BATCH_SIZE, EMBEDDING_MODEL
+from config import (
+    EMBED_BATCH_SIZE,
+    EMBEDDING_MODEL,
+    EMBED_MAX_RETRIES,
+    EMBED_RETRY_DELAY_SECONDS,
+)
 from src.gemini_auth import get_gemini_client
 
 _DOCUMENT_TASK_TYPE = "RETRIEVAL_DOCUMENT"
 _QUERY_TASK_TYPE = "RETRIEVAL_QUERY"
+
+
+def _es_error_de_cuota(error: Exception) -> bool:
+    """Indica si Gemini rechazó temporalmente la petición por cuota."""
+    status_code = getattr(error, "status_code", None)
+    return (
+        status_code == 429
+        or "RESOURCE_EXHAUSTED" in str(error)
+        or "429" in str(error)
+    )
+
+
+def _validar_configuracion_reintentos() -> None:
+    """Valida los parámetros utilizados para recuperar errores de cuota."""
+    if (
+        not isinstance(EMBED_MAX_RETRIES, int)
+        or isinstance(EMBED_MAX_RETRIES, bool)
+        or EMBED_MAX_RETRIES < 0
+    ):
+        raise ValueError(
+            "EMBED_MAX_RETRIES debe ser un entero mayor o igual que 0."
+        )
+
+    if (
+        not isinstance(EMBED_RETRY_DELAY_SECONDS, (int, float))
+        or isinstance(EMBED_RETRY_DELAY_SECONDS, bool)
+        or not math.isfinite(EMBED_RETRY_DELAY_SECONDS)
+        or EMBED_RETRY_DELAY_SECONDS < 0
+    ):
+        raise ValueError(
+            "EMBED_RETRY_DELAY_SECONDS debe ser un número finito "
+            "mayor o igual que 0."
+        )
 
 
 def _extraer_vector(embedding_obj: Any) -> list[float]:
@@ -74,6 +112,37 @@ def _embeddear_lote(
     return vectores
 
 
+def _embeddear_lote_con_reintentos(
+    client: genai.Client,
+    textos: list[str],
+    task_type: str,
+) -> list[list[float]]:
+    """Reintenta el lote actual cuando Gemini devuelve un error 429."""
+    intento = 0
+
+    while True:
+        try:
+            return _embeddear_lote(
+                client,
+                textos,
+                task_type=task_type,
+            )
+        except Exception as error:
+            if not _es_error_de_cuota(error):
+                raise
+
+            if intento >= EMBED_MAX_RETRIES:
+                raise
+
+            intento += 1
+            print(
+                "[EMBED] cuota temporal agotada; "
+                f"esperando {EMBED_RETRY_DELAY_SECONDS:.0f} s "
+                f"antes del reintento {intento}/{EMBED_MAX_RETRIES}"
+            )
+            time.sleep(EMBED_RETRY_DELAY_SECONDS)
+
+
 def _validar_chunks(chunks: list[dict]) -> None:
     for posicion, chunk in enumerate(chunks):
         if not isinstance(chunk, dict):
@@ -109,11 +178,14 @@ def embed_chunks(
 
     _validar_chunks(chunks)
     _validar_batch_size()
+    _validar_configuracion_reintentos()
+
     client = client if client is not None else get_gemini_client()
     textos = [chunk["text"].strip() for chunk in chunks]
 
     inicio = time.perf_counter()
     vectores: list[list[float]] = []
+
     for numero_lote, posicion in enumerate(
         range(0, len(textos), EMBED_BATCH_SIZE),
         start=1,
@@ -121,7 +193,11 @@ def embed_chunks(
         lote = textos[posicion: posicion + EMBED_BATCH_SIZE]
         try:
             vectores.extend(
-                _embeddear_lote(client, lote, task_type=_DOCUMENT_TASK_TYPE)
+                _embeddear_lote_con_reintentos(
+                    client,
+                    lote,
+                    task_type=_DOCUMENT_TASK_TYPE,
+                )
             )
         except Exception as error:
             raise RuntimeError(
