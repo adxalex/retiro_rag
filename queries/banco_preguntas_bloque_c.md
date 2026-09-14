@@ -1,7 +1,7 @@
 # Banco de preguntas de evaluación · bloque C (retrieval y generación)
 
-25 preguntas probadas contra el corpus de `develop` (25 documentos, 95 chunks) con
-`retrieve.py` y `top_k=3`.
+25 preguntas probadas contra el índice real del corpus completo
+(255 registros documentales, 17 fuentes, 1.178 chunks).
 
 `Esperado` indica el comportamiento correcto del sistema:
 
@@ -20,7 +20,7 @@
 | 5 | ¿Qué edificio se utiliza para exposiciones del Museo Reina Sofía? | Responde | informacion_practica_guia_visitante_retiro.pdf | Palacio de Velázquez y Palacio de Cristal; el de Cristal está cerrado por obras en 2026 |
 | 6 | ¿Qué característica arquitectónica distingue al Palacio de Cristal? | Responde | retiro_monumentos_jardines.csv | Estructura de hierro y cristal; ejemplo destacado de la arquitectura del hierro en España |
 | 7 | ¿Qué función tenía originalmente la Casa de Vacas? | Abstención | — | El corpus solo la nombra como centro cultural actual; no recoge su uso original |
-| 8 | ¿Qué fauna es más habitual en el Estanque Grande? | Abstención | — | El corpus no describe la fauna del estanque. Pregunta para el bloque de flora y fauna |
+| 8 | ¿Qué fauna es más habitual en el Estanque Grande? | Responde | flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md | Carpas, según el documento de fauna contrastada. Antes era de abstención: el hueco se cubrió con una fuente nueva |
 | 9 | ¿Qué jardín es famoso por sus parterres geométricos y estilo francés? | Responde | informacion_practica_guia_visitante_retiro.pdf, itinerarios_pie_retiro_.pdf | El Parterre Francés |
 | 10 | ¿Qué árbol centenario está catalogado como uno de los más antiguos de Madrid? | Responde | informacion_practica_guia_visitante_retiro.pdf | El ahuehuete del Parterre Francés (unos 400 años); el más antiguo del Retiro es hoy un olivo de 627 años |
 | 11 | ¿Qué evento deportivo multitudinario atraviesa el Retiro cada año? | Abstención | — | El corpus solo recoge la Feria del Libro y los fuegos de San Isidro |
@@ -41,27 +41,74 @@
 
 ## Resumen
 
-- Responde: 13 preguntas (1, 2, 4, 5, 6, 9, 10, 15, 16, 17, 19, 21, 25)
+- Responde: 14 preguntas
 - Parcial: 2 preguntas (13, 23)
-- Abstención: 10 preguntas (3, 7, 8, 11, 12, 14, 18, 20, 22, 24)
+- Abstención: 9 preguntas (3, 7, 11, 12, 14, 18, 20, 22, 24)
 - Total: 25
+
+La pregunta 8 (fauna del Estanque Grande) pasó de abstención a respondible al
+integrarse la fuente contrastada de fauna. Se documenta el cambio en lugar de
+eliminarla: es un hueco de cobertura detectado y cubierto con una fuente
+trazable.
+
+## Medición con el índice real
+
+Índice: 1.178 chunks, `gemini-embedding-001`, dimensión 3.072, métrica coseno.
+Generación: `gemini-3.6-flash`. `TOP_K` por defecto: 3.
 
 ### Recall de la fuente esperada
 
-Denominador: las 15 preguntas con fuente declarada (13 responde + 2 parcial).
-Las 10 de abstención no cuentan, porque no tienen fuente esperada.
-
-| top_k | Recall | Preguntas |
+| `top_k` | Fuente única declarada | Cualquier fuente válida |
 | --- | --- | --- |
-| 3 | 73 % | 11 de 15 |
-| 5 | 87 % | 13 de 15 |
+| 3 | 73 % (11/15) | 94 % (15/16) |
+| 5 | 80 % (12/15) | 94 % (15/16) |
 
-Medido con embeddings deterministas de juguete, no con gemini-embedding-001:
-sirve para comparar configuraciones, no para fijar el umbral de abstención.
+La primera columna es la medición inicial, con una sola fuente esperada por
+pregunta. Al crecer el corpus, varias preguntas pasaron a tener más de un
+documento que las responde legítimamente: por ejemplo, el edificio de las
+exposiciones del Reina Sofía aparece tanto en la guía del visitante como en el
+documento de arte y cultura. La segunda columna admite cualquiera de esas
+fuentes y añade la pregunta 8 al denominador.
 
-Distribución por categoría: historia, monumentos, jardines, itinerarios,
-información práctica y seguridad. Incluye preguntas conversacionales (23, 25) y
-una fuera de alcance (24).
+El cambio de criterio se hizo **después** de ver los resultados, así que se
+publican las dos cifras. La estricta subestima el rendimiento; la ampliada
+refleja mejor lo que el sistema recupera.
+
+Único fallo real de retrieval: la pregunta 9 (jardín de estilo francés), que
+devuelve la senda botánica y el plan director de arbolado en lugar del documento
+que describe el Parterre Francés.
+
+### Distribución del score del mejor chunk
+
+| | Mínimo | Mediana | Máximo |
+| --- | --- | --- | --- |
+| Preguntas respondibles (n=15) | 0,698 | 0,744 | 0,782 |
+| Preguntas de abstención (n=10) | 0,648 | 0,712 | 0,768 |
+
+Las dos distribuciones se solapan casi por completo. El mejor umbral posible
+(0,698) solo acierta 19 de 25, y deja un margen de 0,008 sobre la pregunta
+respondible peor puntuada: cualquier pregunta correcta ligeramente peor quedaría
+silenciada.
+
+**Decisión: `RAG_SCORE_MINIMO = 0.65`.** No silencia ninguna respuesta correcta
+y descarta el caso más claramente irrelevante. La abstención recae, por diseño,
+en el centinela del prompt.
+
+Seis preguntas sin respuesta en el corpus puntúan por encima de 0,70, entre
+ellas la del evento deportivo (0,744) y la de los fotógrafos (0,736). Esto
+confirma que un umbral de score por sí solo no basta.
+
+### Verificación de la abstención
+
+Pregunta: ¿Qué edificio del Retiro se caracteriza por su estilo neomudéjar?
+
+- Score del mejor chunk: 0,709, por encima del umbral, así que la compuerta de
+  score **no** la detuvo.
+- Resultado: abstención, con motivo `el_modelo_no_vio_evidencia`.
+
+Es la evidencia directa de que las dos compuertas son necesarias: el filtro
+numérico dejó pasar la consulta y fue el centinela del prompt quien evitó que el
+modelo respondiera desde su conocimiento propio, que sí incluye ese dato.
 
 ## Cómo ejecutarlo
 

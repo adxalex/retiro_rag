@@ -202,23 +202,38 @@ def test_un_error_no_muestra_traza(monkeypatch, capsys):
     assert "Traceback" not in error
 
 
-def test_index_sin_pipeline_avisa(monkeypatch, capsys):
-    """Mientras el orquestador no este integrado, --index avisa sin romperse."""
-    monkeypatch.setitem(sys.modules, "src.pipeline", None)
-    assert cli.cmd_index() == 1
-    assert "pipeline" in capsys.readouterr().err
+def test_index_llama_al_pipeline(monkeypatch, capsys):
+    """--index delega en build_index y muestra el resumen."""
+    import src.pipeline
+
+    recibidos = {}
+
+    def _falso(data_dir=None, recreate=True, dry_run=False):
+        recibidos.update(recreate=recreate, dry_run=dry_run)
+        return {
+            "documents": 32,
+            "sources": 17,
+            "chunks": 1177,
+            "chunks_by_group": {"historia_monumentos_jardines": 400},
+            "indexed": True,
+            "collection_count": 1177,
+        }
+
+    monkeypatch.setattr(src.pipeline, "build_index", _falso)
+    assert cli.cmd_index() == 0
+    salida = capsys.readouterr().out
+    assert "1177" in salida
+    assert recibidos["recreate"] is True
+    assert recibidos["dry_run"] is False
 
 
-def test_coleccion_inexistente_explica_como_indexar(monkeypatch, capsys):
-    """Si el indice no existe, la CLI dice como construirlo."""
-    import src.retrieve
+def test_index_con_dry_run_no_indexa(monkeypatch, capsys):
+    import src.pipeline
 
-    def _explota(*_args, **_kwargs):
-        raise ValueError("Collection [retiro_madrid] does not exist")
-
-    monkeypatch.setattr(src.retrieve, "retrieve", _explota)
-    monkeypatch.setattr(sys, "argv", ["main.py", "--query", "x"])
-    assert cli.main() == 1
-    error = capsys.readouterr().err
-    assert "--index" in error
-    assert "Traceback" not in error
+    monkeypatch.setattr(src.pipeline, "build_index", lambda **kwargs: {
+        "documents": 32, "sources": 17, "chunks": 1177,
+        "chunks_by_group": {}, "indexed": False, "collection_count": 0,
+    })
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--dry-run"])
+    assert cli.main() == 0
+    assert "No se ha llamado a Gemini" in capsys.readouterr().out

@@ -103,14 +103,35 @@ def generate_answer(prompt: str, client: Any | None = None) -> str:
 
 
 def _fuentes_de(chunks: list[dict]) -> list[str]:
-    """Lista de fuentes citables, sin repetir y en el orden recuperado."""
+    """Lista de documentos citados, sin repetir y en el orden recuperado."""
     return list(dict.fromkeys(chunk.get("source", "desconocida") for chunk in chunks))
+
+
+def _citas_de(chunks: list[dict]) -> list[dict]:
+    """Mapa de cada numero de cita del prompt a su fragmento.
+
+    El prompt numera los fragmentos del 1 al top_k, asi que el modelo puede
+    citar [3] aunque los tres fragmentos vengan del mismo documento. La lista
+    'fuentes' agrupa por documento y no sirve para resolver esas citas: por eso
+    se expone tambien esta correspondencia numero -> fragmento.
+    """
+    return [
+        {
+            "n": numero,
+            "source": chunk.get("source", "desconocida"),
+            "page": chunk.get("page"),
+            "chunk_id": chunk.get("chunk_id"),
+            "score": chunk.get("score"),
+        }
+        for numero, chunk in enumerate(chunks, start=1)
+    ]
 
 
 def _abstencion(pregunta: str, chunks: list[dict], motivo: str) -> dict:
     return {
         "respuesta": MENSAJE_ABSTENCION,
         "fuentes": [],
+        "citas": [],
         "chunks": chunks,
         "abstuvo": True,
         "motivo_abstencion": motivo,
@@ -177,6 +198,7 @@ def _responder_con_chunks(
     return {
         "respuesta": texto,
         "fuentes": _fuentes_de(chunks),
+        "citas": _citas_de(chunks),
         "chunks": chunks,
         "abstuvo": False,
         "motivo_abstencion": None,

@@ -2,8 +2,9 @@
 
 Ejemplos:
 
-    python main.py --index                 # construye el indice
-    python main.py --index --recreate-index
+    python main.py --index                 # construye el indice (lo recrea)
+    python main.py --index --dry-run       # valida sin llamar a Gemini
+    python main.py --index --keep-index    # upsert sobre la coleccion actual
     python main.py --query "¿A que hora cierra el parque?"
     python main.py --ask   "¿A que hora cierra el parque?"
     python main.py --ask   "..." --top-k 5 --category seguridad
@@ -45,21 +46,27 @@ def _fragmento(numero: int, chunk: dict, caracteres: int = 300) -> None:
     print(f"    {texto}")
 
 
-def cmd_index(recreate: bool = False) -> int:
-    """Carga, chunkea e indexa el corpus completo."""
-    try:
-        from src.pipeline import indexar_corpus
-    except ImportError:
-        print(
-            "El orquestador de indexacion (src/pipeline.py) todavia no esta en "
-            "esta rama. Se integra con la PR del bloque B.",
-            file=sys.stderr,
-        )
-        return 1
+def cmd_index(recreate: bool = True, dry_run: bool = False) -> int:
+    """Carga, chunkea e indexa el corpus completo.
 
-    resultado = indexar_corpus(recreate=recreate)
-    _titulo("Indexacion completada")
-    print(resultado)
+    Delega en src.pipeline.build_index, que es el orquestador del bloque B.
+    El mismo trabajo se puede hacer con scripts/index_corpus.py, que ofrece
+    mas opciones (--data-dir, --json).
+    """
+    from src.pipeline import build_index
+
+    informe = build_index(recreate=recreate, dry_run=dry_run)
+
+    _titulo("Dry run completado" if dry_run else "Indexacion completada")
+    print(f"Documentos cargados: {informe['documents']}")
+    print(f"Fuentes diferentes:  {informe['sources']}")
+    print(f"Chunks generados:    {informe['chunks']}")
+    for grupo, cuantos in informe["chunks_by_group"].items():
+        print(f"  {grupo}: {cuantos}")
+    if informe["indexed"]:
+        print(f"\nRegistros en Chroma: {informe['collection_count']}")
+    else:
+        print("\nNo se ha llamado a Gemini ni a Chroma.")
     return 0
 
 
@@ -128,8 +135,10 @@ def cmd_ask(pregunta: str, top_k: int = TOP_K, category: str | None = None,
 def main() -> int:
     parser = argparse.ArgumentParser(description="RAG - Parque de El Retiro")
     parser.add_argument("--index", action="store_true", help="Indexar el corpus")
-    parser.add_argument("--recreate-index", action="store_true",
-                        help="Borrar y reconstruir el indice desde cero")
+    parser.add_argument("--keep-index", action="store_true",
+                        help="Con --index, conserva la coleccion y hace upsert")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Con --index, valida load y chunk sin llamar a Gemini")
     parser.add_argument("--query", type=str, help="Solo retrieval, sin generacion")
     parser.add_argument("--ask", type=str, help="Respuesta RAG completa")
     parser.add_argument("--top-k", type=int, default=TOP_K,
@@ -149,7 +158,7 @@ def main() -> int:
 
     try:
         if args.index:
-            return cmd_index(recreate=args.recreate_index)
+            return cmd_index(recreate=not args.keep_index, dry_run=args.dry_run)
         if args.query:
             return cmd_query(args.query, top_k=args.top_k, category=args.category,
                              como_json=args.json)
