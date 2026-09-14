@@ -26,6 +26,7 @@ from typing import Any
 
 from config import LLM_MODEL, TOP_K
 from src.gemini_auth import get_gemini_client
+from src.logging_utils import Cronometro, log_query
 from src.retrieve import retrieve
 
 CENTINELA_SIN_EVIDENCIA = "SIN_EVIDENCIA"
@@ -107,7 +108,6 @@ def _fuentes_de(chunks: list[dict]) -> list[str]:
 
 
 def _abstencion(pregunta: str, chunks: list[dict], motivo: str) -> dict:
-    print(f"[GENERATE] abstencion ({motivo}) para: {pregunta[:60]}")
     return {
         "respuesta": MENSAJE_ABSTENCION,
         "fuentes": [],
@@ -134,8 +134,32 @@ def responder(
         raise ValueError("La pregunta no puede estar vacia.")
 
     umbral = SCORE_MINIMO if score_minimo is None else float(score_minimo)
-    chunks = retrieve(pregunta, top_k=top_k, collection=collection, where=where)
 
+    with Cronometro() as crono:
+        chunks = retrieve(pregunta, top_k=top_k, collection=collection, where=where)
+        salida = _responder_con_chunks(pregunta, chunks, umbral, client)
+
+    log_query(
+        pregunta=pregunta,
+        k=top_k,
+        n_chunks=len(chunks),
+        tiempo=crono.segundos,
+        modelo=LLM_MODEL,
+        abstuvo=salida["abstuvo"],
+        motivo_abstencion=salida["motivo_abstencion"],
+        score_top1=round(chunks[0]["score"], 4) if chunks else None,
+        fuentes=salida["fuentes"],
+    )
+    return salida
+
+
+def _responder_con_chunks(
+    pregunta: str,
+    chunks: list[dict],
+    umbral: float,
+    client: Any | None,
+) -> dict:
+    """Aplica las dos compuertas de abstencion sobre los chunks recuperados."""
     if not chunks:
         return _abstencion(pregunta, chunks, "sin_resultados")
 
@@ -145,13 +169,11 @@ def responder(
             pregunta, chunks, f"score_bajo ({mejor_score:.3f} < {umbral:.3f})"
         )
 
-    prompt = build_prompt(pregunta, chunks)
-    texto = generate_answer(prompt, client=client)
+    texto = generate_answer(build_prompt(pregunta, chunks), client=client)
 
     if CENTINELA_SIN_EVIDENCIA in texto.upper():
         return _abstencion(pregunta, chunks, "el_modelo_no_vio_evidencia")
 
-    print(f"[GENERATE] respuesta generada (score_top1={mejor_score:.3f})")
     return {
         "respuesta": texto,
         "fuentes": _fuentes_de(chunks),
