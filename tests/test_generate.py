@@ -330,3 +330,21 @@ def test_la_abstencion_no_lleva_citas():
     salida = responder("x", collection=ColeccionFalsa([chunk(0.05)]),
                        client=ClienteFalso(), score_minimo=0.30)
     assert salida["citas"] == []
+
+
+def test_las_citas_llevan_el_nombre_legible_de_la_fuente():
+    """El usuario no debe leer nombres de fichero."""
+    coleccion = ColeccionFalsa(
+        [chunk(0.8, "informacion_practica_guia_visitante_retiro.pdf")]
+    )
+    cita = responder("x", collection=coleccion, client=ClienteFalso(),
+                     score_minimo=0.30)["citas"][0]
+    assert cita["titulo"] == "Guía del visitante del Retiro"
+    assert cita["oficial"] is True
+    assert ".pdf" not in cita["texto"]
+    assert cita["source"] == "informacion_practica_guia_visitante_retiro.pdf"
+
+
+def test_el_prompt_pide_responder_en_el_idioma_de_la_pregunta():
+    prompt = build_prompt("What time does the park close?", [chunk(0.8)])
+    assert "mismo idioma" in prompt

@@ -26,11 +26,14 @@ from typing import Any
 
 from config import LLM_MODEL, TOP_K
 from src.gemini_auth import get_gemini_client
+from src.fuentes import describir_citas
 from src.logging_utils import Cronometro, log_query
 from src.retrieve import retrieve
 
 CENTINELA_SIN_EVIDENCIA = "SIN_EVIDENCIA"
 
+# Texto fijo en espanol. Si el banco de preguntas crece en otros idiomas,
+# convendria traducirlo segun el idioma detectado en la consulta.
 MENSAJE_ABSTENCION = (
     "No he encontrado esa informacion en los documentos del Parque del Retiro "
     "que tengo disponibles. Puedes consultarlo en la web municipal "
@@ -47,17 +50,18 @@ INSTRUCCIONES = f"""Eres el asistente del Parque de El Retiro de Madrid. Hablas 
 
 Como responder:
 1. Empieza por la respuesta util. La primera frase debe contestar lo que se pregunta, con el dato concreto: el lugar, la hora, la distancia o el nombre.
-2. Se breve: entre una y cuatro frases. Escribe como se lo explicarias a alguien en el parque.
-3. Usa unicamente la informacion del CONTEXTO. No uses conocimiento propio.
-4. Cita los fragmentos con [1], [2] al final de la frase que sostienen.
-5. Si el contexto no contiene la respuesta, responde exactamente {CENTINELA_SIN_EVIDENCIA} y nada mas.
-6. Si el contexto solo responde una parte, contesta esa parte primero y despues di brevemente que del resto no tienes informacion.
+2. Responde en el mismo idioma en que esta escrita la pregunta. Si preguntan en ingles, responde en ingles; si preguntan en catalan, en catalan.
+3. Se breve: entre una y cuatro frases. Escribe como se lo explicarias a alguien en el parque.
+4. Usa unicamente la informacion del CONTEXTO. No uses conocimiento propio.
+5. Cita los fragmentos con [1], [2] al final de la frase que sostienen.
+6. Si el contexto no contiene la respuesta, responde exactamente {CENTINELA_SIN_EVIDENCIA} y nada mas.
+7. Si el contexto solo responde una parte, contesta esa parte primero y despues di brevemente que del resto no tienes informacion.
 
 Advertencias (van al FINAL, nunca al principio):
-7. Avisa solo cuando el dato pueda haber cambiado y eso afecte a la visita: precios, horarios, obras o cierres temporales con varios anos de antiguedad. Una frase de menos de ocho palabras: "Es un dato de 2017, conviene confirmarlo."
-8. No valores la fiabilidad de las fuentes en la respuesta. No digas si son oficiales o no, ni quien las publico, ni la fecha exacta de publicacion: eso aparece en la lista de fuentes que acompana a la respuesta.
-9. No expliques que falta en el corpus ni como estan organizados los documentos. Al visitante no le sirve.
-10. No inventes horarios, precios, distancias ni nombres que no aparezcan en el contexto."""
+8. Avisa solo cuando el dato pueda haber cambiado y eso afecte a la visita: precios, horarios, obras o cierres temporales con varios anos de antiguedad. Una frase de menos de ocho palabras: "Es un dato de 2017, conviene confirmarlo."
+9. No valores la fiabilidad de las fuentes en la respuesta. No digas si son oficiales o no, ni quien las publico, ni la fecha exacta de publicacion: eso aparece en la lista de fuentes que acompana a la respuesta.
+10. No expliques que falta en el corpus ni como estan organizados los documentos. Al visitante no le sirve.
+11. No inventes horarios, precios, distancias ni nombres que no aparezcan en el contexto."""
 
 
 def _formatear_chunk(numero: int, chunk: dict) -> str:
@@ -203,7 +207,7 @@ def _responder_con_chunks(
     return {
         "respuesta": texto,
         "fuentes": _fuentes_de(chunks),
-        "citas": _citas_de(chunks),
+        "citas": describir_citas(_citas_de(chunks)),
         "chunks": chunks,
         "abstuvo": False,
         "motivo_abstencion": None,
