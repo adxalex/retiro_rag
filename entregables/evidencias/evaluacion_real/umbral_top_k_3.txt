@@ -1,0 +1,63 @@
+[RETRIEVE] '¿En qué siglo se construyó originalmente el Real Sitio del B' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué rey impulsó la creación del Retiro como espacio palacie' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Cuál es la entrada más utilizada para iniciar un recorrido ' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué monumento preside el Estanque Grande del Retiro?' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué edificio del Retiro se utiliza actualmente para exposic' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué característica arquitectónica distingue al Palacio de C' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué función tenía originalmente la Casa de Vacas?' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué tipo de fauna es más habitual encontrar en el Estanque ' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué jardín del Retiro es famoso por sus parterres geométric' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué árbol centenario del Retiro está catalogado como uno de' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué evento deportivo multitudinario suele atravesar el Reti' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué norma de seguridad se recomienda especialmente en zonas' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué edificio del Retiro fue utilizado como cuartel durante ' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué espacio del parque es conocido por sus actividades de l' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué ruta del Retiro incluye el Palacio de Cristal, el Estan' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué institución oficial respalda la información turística d' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué horario aproximado tiene el parque durante los meses de' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué zona del Retiro es considerada de especial interés para' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué elemento del Retiro está dedicado a Alfonso XII?' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué edificio del Retiro se caracteriza por su estilo neomud' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué punto del parque se considera ideal para iniciar una ru' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué protocolo se recomienda seguir si un visitante se pierd' -> 3 chunks (top_k=3)
+[RETRIEVE] 'Me encuentro mal del estómago y necesito ir al baño, estoy j' -> 3 chunks (top_k=3)
+[RETRIEVE] '¿Qué harías si durante el recorrido alguien asegura haber vi' -> 3 chunks (top_k=3)
+[RETRIEVE] 'Hay alerta naranja y estoy en el lago, ¿qué hago?' -> 3 chunks (top_k=3)
+
+Distribucion del score del mejor chunk (top_k=3)
+Deberia responder        n=15  min=0.698  mediana=0.744  max=0.782
+Deberia abstenerse       n=10  min=0.641  mediana=0.712  max=0.768
+
+umbral  responde_ok  abstiene_ok  total
+ 0.641      15            0       15/25
+ 0.678      15            1       16/25
+ 0.685      15            2       17/25
+ 0.692      15            3       18/25
+ 0.698      15            4       19/25
+ 0.709      14            5       19/25
+ 0.710      13            5       18/25
+ 0.712      13            5       18/25
+ 0.718      13            6       19/25
+ 0.721      12            6       18/25
+ 0.725      11            7       18/25
+ 0.731      11            7       18/25
+ 0.733      10            7       17/25
+ 0.736       9            7       16/25
+ 0.744       8            9       17/25
+ 0.750       6            9       15/25
+ 0.753       4            9       13/25
+ 0.754       3            9       12/25
+ 0.768       3           10       13/25
+ 0.773       2           10       12/25
+ 0.781       1           10       11/25
+ 0.782       0           10       10/25
+
+Mejor umbral con estos datos: 0.698 (19/25 aciertos)
+Para aplicarlo, en .env:  RAG_SCORE_MINIMO=0.70
+
+Preguntas de abstencion con score alto (6):
+  0.768  ¿Qué tipo de fauna es más habitual encontrar en el Estanque Grande?
+  0.744  ¿Qué evento deportivo multitudinario suele atravesar el Retiro cada añ
+  0.736  ¿Qué zona del Retiro es considerada de especial interés para fotógrafo
+  0.725  ¿Cuál es la entrada más utilizada para iniciar un recorrido turístico
+  0.712  ¿Qué espacio del parque es conocido por sus actividades de lectura y c

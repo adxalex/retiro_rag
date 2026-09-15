@@ -4,29 +4,30 @@ Sistema RAG sobre el Parque de El Retiro. El proyecto carga y fragmenta un corpu
 
 ## Estado del proyecto
 
-El proyecto se encuentra en fase de integración.
+El proyecto se encuentra en fase avanzada de integración del MVP.
 
 Actualmente están implementados:
 
-- Carga de documentos PDF, Markdown y CSV.
-- Validación del contrato documental.
-- Chunking configurable y trazable.
-- Generación de embeddings por lotes.
+- Carga y validación de documentos PDF, Markdown y CSV.
+- Chunking configurable, deduplicado y trazable.
+- Generación de embeddings por lotes con reintentos ante límites de cuota.
+- Checkpoint persistente y reanudable para conservar embeddings completados.
 - Indexación persistente en ChromaDB.
 - Retrieval con distancia coseno, filtros de metadata y `top_k`.
-- Autenticación compartida para Gemini.
-- Validación de disponibilidad de modelos.
-- Orquestación del pipeline offline.
+- Generación de respuestas fundamentadas con fuentes y mecanismo de abstención.
+- CLI para indexación, retrieval y respuesta completa.
+- Interfaz de Streamlit.
+- Autenticación y validación de modelos de Gemini.
 - Pruebas unitarias y de integración.
+- Evaluación de retrieval con el corpus completo y embeddings reales.
 - Experimento con dos configuraciones de chunking.
 
-Continúan pendientes o en desarrollo:
+Continúan pendientes de validación o cierre:
 
-- Generación final de respuestas.
-- Abstención calibrada con resultados reales.
-- Integración mediante `respond()`.
-- Interfaz de Streamlit.
-- Evaluación definitiva con el corpus completo y embeddings reales.
+- Evaluación end-to-end de generación sobre el banco completo de preguntas.
+- Calibración definitiva del umbral de abstención.
+- Validación final de la interfaz de Streamlit.
+- Consolidación de la documentación y de las evidencias del MVP.
 
 ## Arquitectura
 
@@ -46,7 +47,7 @@ Pregunta
     → embed_query
     → retrieve
     → generate
-    → respond
+    → responder
     → CLI / Streamlit
 ```
 
@@ -70,6 +71,7 @@ docs/
 └── evaluation/
 
 entregables/
+├── evidencias/
 ├── experimentos/
 └── informe_decisiones.md
 
@@ -88,6 +90,7 @@ src/
 ├── load.py
 ├── chunk.py
 ├── embed.py
+├── embedding_cache.py
 ├── index.py
 ├── pipeline.py
 ├── retrieve.py
@@ -96,12 +99,16 @@ src/
 
 tests/
 ├── fixtures/
+├── test_block_b_pipeline.py
 ├── test_chunk.py
 ├── test_embed.py
+├── test_embedding_cache.py
+├── test_generate.py
 ├── test_index.py
+├── test_main.py
 ├── test_pipeline.py
-├── test_retrieve.py
-└── test_block_b_pipeline.py
+├── test_pipeline_retrieve.py
+└── test_retrieve.py
 ```
 
 ## Documentación
@@ -180,6 +187,10 @@ CHUNK_SIZE=500
 CHUNK_OVERLAP=50
 
 EMBED_BATCH_SIZE=32
+EMBED_MAX_RETRIES=3
+EMBED_RETRY_DELAY_SECONDS=60
+EMBED_RESUME=True
+EMBED_CHECKPOINT_PATH=.cache/embeddings/retiro_madrid.json
 INDEX_BATCH_SIZE=100
 HNSW_SPACE=cosine
 
@@ -194,33 +205,33 @@ EMBEDDING_MODEL=gemini-embedding-001
 
 ## Modelos de Gemini
 
-El proyecto utiliza modelos diferentes para generación y embeddings:
+El proyecto separa el modelo generativo del modelo utilizado para construir
+y consultar el índice:
 
-- `gemini-2.5-flash`: generación de respuestas.
+- `LLM_MODEL`: generación de respuestas.
 - `gemini-embedding-001`: embeddings de documentos y consultas.
 
-`gemini-embedding-001` genera un vector independiente por cada texto y mantiene la correspondencia directa entre `chunk_id` y vector esperada por el pipeline.
+El índice validado se construyó con `gemini-embedding-001`, vectores de 3072
+dimensiones y distancia coseno. El modelo generativo no forma parte de los
+criterios de reutilización del checkpoint ni de la metadata vectorial; por
+tanto, cambiar únicamente `LLM_MODEL` no obliga a reconstruir el índice.
 
-Antes de utilizar los modelos, se recomienda validar su disponibilidad:
+`gemini-2.5-flash` se mantiene como valor predeterminado actualmente
+versionado en `config.py` y `.env.example`. `gemini-3.6-flash` se utilizó
+satisfactoriamente en pruebas locales de una respuesta y una abstención. Estas
+ejecuciones son smoke tests y no sustituyen una validación sistemática del banco
+completo en CLI y Streamlit.
+
+Antes de utilizar los modelos, se recomienda comprobar su disponibilidad:
 
 ```bash
 python -m scripts.validation.validate_gemini_models
-```
-
-Para mostrar el informe completo:
-
-```bash
 python -m scripts.validation.validate_gemini_models --json
 ```
 
-El validador comprueba:
-
-- La autenticación.
-- Que el modelo generativo admita `generateContent`.
-- Que el modelo de embeddings admita `embedContent`.
-- Qué alternativas están disponibles para cada operación.
-
-El validador no modifica automáticamente `config.py`. Si cambia el modelo de embeddings, debe reconstruirse la colección de Chroma porque pueden cambiar la dimensión y el espacio semántico de los vectores.
+El validador comprueba la autenticación y la disponibilidad de las operaciones
+de generación y embeddings. La opción `--json` muestra el informe completo en
+formato JSON. Esta validación no modifica `config.py`.
 
 ## Corpus
 
@@ -301,17 +312,18 @@ Para obtener el resumen como JSON:
 python -m scripts.index_corpus --dry-run --json
 ```
 
-En la fotografía actual del corpus, el resultado esperado es aproximadamente:
+En la fotografía validada del corpus, el resultado exacto es:
 
 ```text
-254 registros cargados
-16 fuentes diferentes
-1171 chunks
+255 registros cargados
+17 fuentes diferentes
+1177 chunks
 ```
 
-Estas cifras deben actualizarse cuando se incorporen nuevos documentos.
+Estas cifras corresponden al corpus y a la configuración de chunking actuales:
+`CHUNK_SIZE=500`, `CHUNK_OVERLAP=50` y `MAX_CHUNKS=None`.
 
-## Construcción del índice
+## Construcción y reanudación del índice
 
 Para generar los embeddings de todo el corpus y reconstruir la colección persistente:
 
@@ -319,7 +331,17 @@ Para generar los embeddings de todo el corpus y reconstruir la colección persis
 python -m scripts.index_corpus
 ```
 
-La reconstrucción completa es el comportamiento predeterminado. Evita conservar chunks correspondientes a documentos eliminados o versiones anteriores del corpus.
+`python -m scripts.index_corpus` reconstruye Chroma por defecto. Este
+comportamiento evita conservar chunks correspondientes a documentos eliminados
+o versiones anteriores del corpus.
+
+La generación de embeddings utiliza un checkpoint local reanudable:
+`.cache/embeddings/retiro_madrid.json`.
+
+Cada lote completado se valida y se guarda atómicamente antes de continuar. Si
+la ejecución se interrumpe o se produce un error de cuota, puede repetirse el
+comando: se reutilizan los embeddings cuyo `chunk_id`, hash del texto y modelo
+siguen siendo válidos, y solo se solicitan los chunks pendientes.
 
 Para realizar un `upsert` sin eliminar previamente la colección:
 
@@ -327,7 +349,30 @@ Para realizar un `upsert` sin eliminar previamente la colección:
 python -m scripts.index_corpus --keep-existing
 ```
 
-`--keep-existing` puede utilizarse durante el desarrollo, pero no sustituye a la reconstrucción final. Un `upsert` actualiza identificadores presentes, pero no elimina registros antiguos que hayan desaparecido del corpus.
+`python -m scripts.index_corpus --keep-existing` conserva la colección y
+realiza un `upsert`. Puede utilizarse durante el desarrollo, pero no sustituye a
+una reconstrucción cuando el corpus cambia: actualiza los identificadores
+presentes, pero no elimina registros antiguos que hayan desaparecido del corpus.
+
+La CLI principal también está conectada con el pipeline:
+
+```bash
+python main.py --index
+```
+
+Este comando conserva la colección existente. La reconstrucción explícita mediante la CLI se solicita con:
+
+```bash
+python main.py --index --recreate-index
+```
+
+El índice local validado presenta este estado:
+
+- Colección: `retiro_madrid`.
+- Registros: 1177.
+- Modelo de embeddings: `gemini-embedding-001`.
+- Dimensión: 3072.
+- Métrica: coseno (`HNSW_SPACE=cosine`).
 
 La colección debe reconstruirse cuando cambie cualquiera de estos elementos:
 
@@ -339,6 +384,15 @@ La colección debe reconstruirse cuando cambie cualquiera de estos elementos:
 - Dimensión de los vectores.
 - Métrica de ChromaDB.
 - Convención de `chunk_id`.
+
+Cambiar únicamente `LLM_MODEL` no afecta a los embeddings ni obliga a
+reconstruir el índice.
+
+El checkpoint y la colección Chroma son artefactos derivados locales. Están
+excluidos de Git y no deben versionarse:
+
+- `.cache/embeddings/`
+- `chroma/`
 
 ## Retrieval
 
@@ -362,43 +416,71 @@ El retrieval admite filtros opcionales de metadata mediante `where`.
 
 ## Evaluación
 
-Los bancos de preguntas se encuentran en `queries/`.
+Los bancos de preguntas se encuentran en `queries/` y contienen casos:
 
-La evaluación debe incluir:
+- Respondibles.
+- Parcialmente respondibles.
+- Fuera del corpus.
+- De comprobación de fuentes, grounding, citas y abstención.
 
-- Preguntas respondibles.
-- Preguntas parcialmente respondibles.
-- Preguntas fuera del corpus.
-- Comprobación de fuentes esperadas.
-- Comparación de al menos dos valores de `top_k`.
-- Abstención.
-- Grounding.
-- Citas.
-- Análisis de fallos.
+### Evaluación simulada
 
-El banco de retrieval puede ejecutarse con un índice simulado:
+El banco de retrieval puede ejecutarse con embeddings deterministas de juguete:
 
 ```bash
 python -m scripts.validation.eval_preguntas --simulado --top-k 3
 python -m scripts.validation.eval_preguntas --simulado --top-k 5
 ```
 
-Con el corpus ampliado, los embeddings simulados han obtenido provisionalmente:
+Con estos embeddings simulados se obtiene:
 
 ```text
 Recall@3 = 47 %
 Recall@5 = 60 %
 ```
 
-Estas cifras no representan la calidad definitiva del sistema. El índice simulado utiliza vectores deterministas de juguete y sirve únicamente para validar el flujo.
+Estas cifras validan el recorrido técnico del evaluador, pero no representan la calidad del índice real.
 
-La evaluación final debe repetirse con:
+### Evaluación con embeddings reales
 
-- Corpus definitivo.
-- `gemini-embedding-001`.
-- Colección Chroma completa.
-- `top_k=3`.
-- `top_k=5`.
+La evaluación de retrieval se repitió sobre la colección completa, construida
+con `gemini-embedding-001`:
+
+```bash
+python -m scripts.validation.eval_preguntas --top-k 3 --detalle
+python -m scripts.validation.eval_preguntas --top-k 5 --detalle
+```
+
+Resultados de recuperación de la fuente esperada:
+
+| Configuración | Fuentes encontradas | Recall de fuente |
+| ------------- | ------------------: | ---------------: |
+| `top_k=3`     |               11/15 |           73,3 % |
+| `top_k=5`     |               12/15 |           80,0 % |
+
+El denominador está formado por las 15 preguntas que tienen una fuente esperada declarada. Las 10 preguntas de abstención quedan fuera de esta métrica.
+
+El recall de fuente comprueba si el nombre de la fuente esperada aparece entre
+los resultados recuperados. Esta evaluación de retrieval no valida la respuesta
+final, su grounding, la calidad de las citas ni la abstención end-to-end.
+
+Las evidencias textuales sanitizadas se conservan en:
+
+- [`eval_top_k_3.txt`](entregables/evidencias/evaluacion_real/eval_top_k_3.txt)
+- [`eval_top_k_5.txt`](entregables/evidencias/evaluacion_real/eval_top_k_5.txt)
+- [`umbral_top_k_3.txt`](entregables/evidencias/evaluacion_real/umbral_top_k_3.txt)
+- [`umbral_top_k_5.txt`](entregables/evidencias/evaluacion_real/umbral_top_k_5.txt)
+
+Regenerar estas evaluaciones reales consume API y los comandos con redirección
+sobrescriben los archivos de evidencia existentes.
+
+### Abstención y umbral
+
+Los informes de calibración producen una recomendación automática de `0.70`.
+Este valor es provisional, no un umbral definitivo: existe solapamiento entre
+los scores de preguntas respondibles y preguntas fuera del corpus.
+
+El evaluador actual mide retrieval y fuentes, pero no ejecuta la generación end-to-end. Por tanto, las 10 preguntas de abstención todavía deben validarse mediante el modelo generativo antes de adoptar un umbral definitivo.
 
 ## Experimento de chunking
 
@@ -461,24 +543,32 @@ La batería actual incluye pruebas de:
 - Trazabilidad.
 - Determinismo.
 - Procesamiento de embeddings por lotes.
+- Reintentos ante errores de cuota.
+- Persistencia e invalidación del checkpoint.
+- Reutilización de embeddings y conservación del orden.
+- Conservación de lotes completados después de un fallo.
 - Dimensión y validez de vectores.
 - Conservación de metadata.
 - Sanitización para ChromaDB.
 - Idempotencia.
 - Reconstrucción de la colección.
-- Orquestación del pipeline.
+- Integración entre pipeline, Chroma y retrieval.
+- CLI de indexación, consulta y respuesta.
 - Retrieval.
 - Filtros.
 - Conversión de distancia a score.
+- Generación y abstención mediante dobles.
 - Evaluación simulada.
 
-La rama de integración ha superado:
+Resultado de la ejecución registrada:
 
 ```text
-208 tests
+290 tests superados, 2 warnings de dependencias
 ```
 
-Los tests unitarios utilizan dobles, clientes simulados o colecciones temporales. No consumen la API salvo en los smoke tests explícitamente diseñados para ello.
+La ejecución registrada utilizó dobles, clientes simulados y colecciones
+temporales; no hizo llamadas reales a Gemini. Los smoke tests reales se ejecutan
+por separado.
 
 ## Validaciones auxiliares
 
@@ -504,11 +594,11 @@ python -m scripts.validation.validate_corpus
 
 ### Cobertura documental del retrieval
 
-```bash
-python -m scripts.validation.retrieval_coverage
-```
-
-La cobertura documental es una herramienta diagnóstica. Que un documento no aparezca en una pregunta no implica necesariamente que esté mal indexado: también puede indicar que el banco no contiene una pregunta que lo cubra.
+`scripts/validation/retrieval_coverage.py` contiene funciones diagnósticas de
+cobertura, pero actualmente no define `main()` y no se presenta como una CLI
+operativa. Que un documento no aparezca en una pregunta no implica
+necesariamente que esté mal indexado: también puede indicar que el banco no
+contiene una pregunta que lo cubra.
 
 ## Limitaciones conocidas
 
@@ -517,10 +607,11 @@ La cobertura documental es una herramienta diagnóstica. Que un documento no apa
 - Los PDF sin texto en una página omiten esa página durante la carga.
 - El bloque de flora, fauna y arbolado representa una parte grande del corpus.
 - La guía de aves contiene información general de la Comunidad de Madrid y no constituye un inventario específico del Retiro.
-- El recall actual procede de embeddings simulados.
-- La abstención definitiva requiere calibración con scores reales.
-- `generate.py`, `respond()` y Streamlit continúan en desarrollo.
-- El corpus puede cambiar antes de la indexación definitiva.
+- La evaluación real realizada cubre retrieval de fuente, pero no valida la generación end-to-end, el grounding, las citas ni la abstención final.
+- La recomendación automática de umbral `0.70` es provisional y requiere calibración definitiva.
+- `generate.py`, `responder()` y Streamlit están implementados; falta completar su validación final en CLI y en la interfaz.
+- El warning de AFC (`Automatic Function Calling`) procede de una limitación conocida del SDK y no afecta a la ejecución registrada.
+- El índice actual está validado contra 255 registros, 17 fuentes y 1177 chunks; debe reconstruirse si cambia el corpus o la configuración vectorial.
 
 ## Seguridad
 
@@ -535,19 +626,15 @@ La cobertura documental es una herramienta diagnóstica. Que un documento no apa
 
 ## Flujo recomendado antes de la entrega
 
-1. Integrar el corpus definitivo.
-2. Validar el manifiesto.
-3. Ejecutar el modo `dry-run`.
-4. Ejecutar todas las pruebas.
-5. Validar los modelos Gemini.
-6. Reconstruir la colección completa.
-7. Evaluar retrieval con embeddings reales.
-8. Comparar `top_k=3` y `top_k=5`.
-9. Calibrar la abstención.
-10. Comprobar fuentes y citas.
-11. Ejecutar el smoke test completo.
-12. Actualizar el informe de decisiones.
-13. Preparar las capturas de la aplicación.
+1. Verificar mediante `dry-run` los 255 registros, 17 fuentes y 1177 chunks.
+2. Ejecutar la suite completa.
+3. Validar la disponibilidad de los modelos Gemini.
+4. Verificar la integridad del checkpoint y de la colección local.
+5. No reconstruir el índice salvo que cambie el corpus o la configuración.
+6. Evaluar retrieval con `top_k=3` y `top_k=5`.
+7. Validar generación, grounding, citas y abstención end-to-end.
+8. Validar el flujo final en Streamlit.
+9. Completar el informe de decisiones y versionar evidencias sanitizadas.
 
 ## Reparto técnico
 
@@ -557,7 +644,10 @@ La cobertura documental es una herramienta diagnóstica. Que un documento no apa
 
 Las modificaciones que afecten a la interfaz entre bloques deben revisarse contra el contrato compartido.
 
-## Capturas pendientes
+## Evidencias para el cierre
+
+Las evidencias textuales sanitizadas son prioritarias. Las capturas pueden
+complementarlas, pero no son obligatorias ni las sustituyen. Pueden cubrir:
 
 - Construcción correcta del índice.
 - Consulta con recuperación relevante.

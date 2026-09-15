@@ -5,9 +5,17 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from config import CHUNK_OVERLAP, CHUNK_SIZE, DATA_DIR
+from config import (
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
+    DATA_DIR,
+    EMBEDDING_MODEL,
+    EMBED_CHECKPOINT_PATH,
+    EMBED_RESUME,
+)
 from src.chunk import chunk_documents
 from src.embed import embed_chunks
+from src.embedding_cache import EmbeddingCheckpoint
 from src.index import index_chunks
 from src.load import load_documents
 
@@ -69,6 +77,7 @@ def build_index(
     dry_run: bool = False,
     embedding_client: Any | None = None,
     chroma_client: Any | None = None,
+    checkpoint: EmbeddingCheckpoint | None = None,
 ) -> dict[str, Any]:
     """Ejecuta load → chunk → embed → index sobre el corpus completo.
 
@@ -83,9 +92,18 @@ def build_index(
         report["collection_count"] = None
         return report
 
+    active_checkpoint = checkpoint
+
+    if active_checkpoint is None and EMBED_RESUME:
+        active_checkpoint = EmbeddingCheckpoint(
+            path=EMBED_CHECKPOINT_PATH,
+            model=EMBEDDING_MODEL,
+        )
+
     chunks_with_vectors = embed_chunks(
         chunks,
         client=embedding_client,
+        checkpoint=active_checkpoint,
     )
 
     collection_count = index_chunks(

@@ -6,5 +6,7 @@ chroma/
 output/
 .DS_Store
 *.egg-info/
+# Checkpoints locales de embeddings.
+.cache/
 
 probar_cli.py

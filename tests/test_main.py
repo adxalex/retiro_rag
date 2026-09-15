@@ -177,7 +177,8 @@ def test_top_k_invalido_es_error(monkeypatch):
 
 
 def test_main_enruta_a_ask(monkeypatch, responder_falso, capsys):
-    monkeypatch.setattr(sys, "argv", ["main.py", "--ask", "¿A que hora cierra?"])
+    monkeypatch.setattr(
+        sys, "argv", ["main.py", "--ask", "¿A que hora cierra?"])
     assert cli.main() == 0
     assert "Pregunta:" in capsys.readouterr().out
 
@@ -200,6 +201,34 @@ def test_un_error_no_muestra_traza(monkeypatch, capsys):
     error = capsys.readouterr().err
     assert "GEMINI_API_KEY" in error
     assert "Traceback" not in error
+
+
+def test_index_conecta_con_pipeline(monkeypatch, capsys):
+    """Comprueba que --index utiliza el pipeline sin servicios externos."""
+    import src.pipeline
+
+    received = {}
+
+    def fake_build_index(*, recreate, dry_run=False):
+        received["recreate"] = recreate
+        received["dry_run"] = dry_run
+        return {
+            "documents": 255,
+            "sources": 17,
+            "chunks": 1177,
+            "chunks_by_group": {},
+            "indexed": True,
+            "collection_count": 1177,
+        }
+
+    monkeypatch.setattr(src.pipeline, "build_index", fake_build_index)
+
+    assert cli.cmd_index(recreate=True) == 0
+    assert received["recreate"] is True
+
+    output = capsys.readouterr().out
+    assert "Indexacion completada" in output
+    assert "1177" in output
 
 
 def test_index_no_recrea_la_coleccion_por_defecto(monkeypatch, capsys):
@@ -228,9 +257,7 @@ def test_index_no_recrea_la_coleccion_por_defecto(monkeypatch, capsys):
     assert cli.main() == 0
     assert recibidos["recreate"] is False, "El default debe ser seguro."
     assert recibidos["dry_run"] is False
-    salida = capsys.readouterr().out
-    assert "1177" in salida
-    assert "Upsert" in salida
+    assert "Upsert" in capsys.readouterr().out
 
 
 def test_recreate_index_solo_cuando_se_pide(monkeypatch, capsys):
@@ -260,3 +287,18 @@ def test_index_con_dry_run_no_indexa(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--dry-run"])
     assert cli.main() == 0
     assert "No se ha llamado a Gemini" in capsys.readouterr().out
+
+
+def test_coleccion_inexistente_explica_como_indexar(monkeypatch, capsys):
+    """Si el indice no existe, la CLI dice como construirlo."""
+    import src.retrieve
+
+    def _explota(*_args, **_kwargs):
+        raise ValueError("Collection [retiro_madrid] does not exist")
+
+    monkeypatch.setattr(src.retrieve, "retrieve", _explota)
+    monkeypatch.setattr(sys, "argv", ["main.py", "--query", "x"])
+    assert cli.main() == 1
+    error = capsys.readouterr().err
+    assert "--index" in error
+    assert "Traceback" not in error

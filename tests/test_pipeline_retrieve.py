@@ -44,6 +44,7 @@ def deterministic_vector(text: str) -> list[float]:
 def fake_embed_chunks(
     chunks: list[dict],
     client=None,
+    checkpoint=None,
 ) -> list[dict]:
     """Añade embeddings deterministas conservando la metadata."""
     return [
