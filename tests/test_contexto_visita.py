@@ -226,3 +226,25 @@ def test_una_clave_vacia_no_recurre_al_entorno(monkeypatch):
 def test_sin_indicar_clave_se_lee_del_entorno(monkeypatch):
     monkeypatch.delenv("AEMET_API_KEY", raising=False)
     assert obtener_observacion() is None
+
+
+def test_el_horario_usa_la_hora_de_madrid_no_la_del_servidor(monkeypatch):
+    """En un servidor en UTC, el estado del parque debe seguir siendo el de Madrid.
+
+    A las 23:30 UTC de un dia de invierno en Madrid son las 00:30 del dia
+    siguiente: el parque esta cerrado, aunque en UTC parezca que sigue abierto.
+    """
+    from datetime import timezone
+
+    import src.contexto_visita as modulo
+
+    utc_2330 = datetime(2026, 1, 15, 23, 30, tzinfo=timezone.utc)
+    en_madrid = utc_2330.astimezone(modulo.ZONA_MADRID)
+    assert en_madrid.hour == 0, "En invierno Madrid va una hora por delante de UTC."
+    assert modulo.estado_del_parque(en_madrid)["abierto"] is False
+
+
+def test_ahora_en_madrid_devuelve_hora_con_zona():
+    from src.contexto_visita import ahora_en_madrid
+
+    assert ahora_en_madrid().tzinfo is not None

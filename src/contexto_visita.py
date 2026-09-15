@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Any
 
 import requests
@@ -42,6 +43,16 @@ HORA_APERTURA = 6
 HORA_CIERRE_INVIERNO = 22  # octubre a marzo
 HORA_CIERRE_VERANO = 24  # abril a septiembre
 MESES_VERANO = range(4, 10)
+
+# El horario del parque es hora local de Madrid. Si el servidor corre en UTC,
+# datetime.now() daria una hora equivocada y el aviso de apertura o cierre
+# seria incorrecto, asi que la zona horaria se fija explicitamente.
+ZONA_MADRID = ZoneInfo("Europe/Madrid")
+
+
+def ahora_en_madrid() -> datetime:
+    """Hora actual en el parque, independiente de la zona del servidor."""
+    return datetime.now(ZONA_MADRID)
 
 AVISO_NO_OFICIAL = (
     "Comparación orientativa con los umbrales del protocolo. El estado oficial "
@@ -68,7 +79,7 @@ def hora_de_cierre(momento: datetime) -> int:
 
 def estado_del_parque(momento: datetime | None = None) -> dict:
     """Dice si el parque esta abierto segun el horario del corpus."""
-    momento = momento or datetime.now()
+    momento = momento or ahora_en_madrid()
     cierre = hora_de_cierre(momento)
     abierto = HORA_APERTURA <= momento.hour < cierre
     temporada = "verano" if momento.month in MESES_VERANO else "invierno"
@@ -179,7 +190,7 @@ def saludo_contextual(
     Devuelve siempre las mismas claves, haya datos meteorologicos o no:
     saludo, estado (del parque), observacion, viento, peculiaridades y fuente.
     """
-    momento = momento or datetime.now()
+    momento = momento or ahora_en_madrid()
     estado = estado_del_parque(momento)
     observacion = obtener_observacion(api_key=api_key, sesion=sesion)
     viento = nivel_de_viento(observacion.get("racha_kmh") if observacion else None)
