@@ -26,7 +26,7 @@ Pregunta → retrieval top-k → contexto → prompt → LLM → respuesta y evi
 
 - `src/retrieve.py`: consulta ChromaDB y genera `RetrievedChunk`.
 - `src/generate.py`: construye el prompt, aplica grounding y gestiona la abstención.
-- `respond()`: API interna común.
+- `responder()`: API interna común.
 - `main.py`: expone `--query` y `--ask`.
 - `app.py`: presenta el asistente RAG mediante Streamlit.
 
@@ -110,4 +110,4 @@ Registrar pregunta, `top_k`, número de chunks, tiempo total, modelo de embeddin
 
 ## 10. Interfaz
 
-El asistente RAG muestra chat, respuesta, fuentes, chunks recuperados y una tabla con K, número de chunks, tiempo y modelo. Streamlit llama a `respond()` y no reimplementa la lógica RAG.
+El asistente RAG muestra chat, respuesta, fuentes, chunks recuperados y una tabla con K, número de chunks, tiempo y modelo. Streamlit llama a `responder()` y no reimplementa la lógica RAG.

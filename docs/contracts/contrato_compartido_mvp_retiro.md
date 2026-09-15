@@ -11,7 +11,7 @@
 3. Cada chunk debe poder rastrearse hasta su documento, página y fuente.
 4. La clasificación temática del contenido no debe confundirse con el reparto de trabajo.
 5. ChromaDB solo recibirá metadata plana y sin valores `None`.
-6. `respond()` será la interfaz interna común para CLI, Streamlit y posibles consumidores posteriores.
+6. `responder()` será la interfaz interna común para CLI, Streamlit y posibles consumidores posteriores.
 7. Un cambio en campos, tipos o significado exige actualizar fixtures, productores, consumidores y pruebas de contrato.
 
 ## 2. Flujo compartido
@@ -38,7 +38,7 @@ PDF / TXT / MD / CSV
                     generate.py
                          │
                          ▼
-                      respond()
+                      responder()
                          │  RAGResponse
                 ┌────────┼────────┐
                 ▼        ▼        ▼
@@ -221,12 +221,21 @@ score = max(0.0, min(1.0, 1.0 - distance))
 
 ## 9. Contrato 4: respuesta final
 
-Salida pública de `respond()` y única estructura que necesitan CLI, Streamlit u otro consumidor.
+Salida pública de `responder()` y única estructura que necesitan CLI, Streamlit u otro consumidor.
 
 ```json
 {
   "respuesta": "El parque abre a las 06:00...",
   "fuentes": ["mock_folleto_retiro.pdf"],
+  "citas": [
+    {
+      "n": 1,
+      "source": "mock_folleto_retiro.pdf",
+      "page": 1,
+      "chunk_id": "mock-folleto-retiro__0000",
+      "score": 0.83
+    }
+  ],
   "chunks": [
     {
       "chunk_id": "mock-folleto-retiro__0000",
@@ -240,20 +249,21 @@ Salida pública de `respond()` y única estructura que necesitan CLI, Streamlit 
       "score": 0.83
     }
   ],
-  "abstuvo": false
+  "abstuvo": false,
+  "motivo_abstencion": null
 }
 ```
 
 Firma interna mínima:
 
 ```python
-def respond(question: str, top_k: int = 3) -> RAGResponse:
+def responder(pregunta: str, top_k: int = 3) -> dict:
     ...
 ```
 
 ### Reglas
 
-- Siempre devuelve `respuesta`, `fuentes`, `chunks` y `abstuvo`.
+- - Siempre devuelve `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
 - `fuentes` no contiene duplicados.
 - `abstuvo` es `true` cuando el sistema no dispone de contexto suficiente para responder con fundamento.
 - CLI y Streamlit llaman a la misma función; no duplican la lógica RAG.
@@ -289,7 +299,7 @@ def respond(question: str, top_k: int = 3) -> RAGResponse:
 
 - Curación de itinerarios, información práctica y seguridad.
 - Implementación de `retrieve.py` y `generate.py`.
-- API interna `respond()`.
+- API interna `responder()`.
 - Estrategia de abstención.
 - CLI con `--query` y `--ask`.
 - Aplicación asistente RAG en Streamlit.
@@ -420,9 +430,9 @@ Una secuencia de `LoadedDocument` válidos producidos por el bloque A.
 4. Ordenar los resultados de mayor a menor relevancia.
 5. Implementar `generate.py` usando únicamente el contexto recuperado.
 6. Definir y probar una regla sencilla y documentada de abstención.
-7. Implementar la API interna `respond(question, top_k)`.
-8. Devolver siempre `respuesta`, `fuentes`, `chunks` y `abstuvo`.
-9. Exponer CLI con `--query` y `--ask` reutilizando `respond()`.
+7. Implementar la API interna `responder(pregunta, top_k)`.
+8. Devolver siempre `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
+9. Exponer CLI con `--query` y `--ask` reutilizando `responder()`.
 10. Implementar el asistente RAG en Streamlit sin duplicar la lógica RAG.
 11. Mostrar respuesta, fuentes, chunks y métricas exigidas por el enunciado.
 12. Añadir pruebas unitarias, de integración y de contrato para retrieval y respuesta.
@@ -448,7 +458,7 @@ Una secuencia de `LoadedDocument` válidos producidos por el bloque A.
 2. Cada chunk recuperado conserva su trazabilidad y tiene un `score` coherente.
 3. Las fuentes finales se deduplican y corresponden a los chunks utilizados.
 4. El sistema se abstiene cuando no dispone de contexto suficiente.
-5. CLI y Streamlit consumen la misma función `respond()`.
+5. CLI y Streamlit consumen la misma función `responder()`.
 6. Se muestran las métricas mínimas acordadas por el equipo.
 7. Las pruebas funcionan con los fixtures de B y con la colección integrada.
 
@@ -503,23 +513,22 @@ Una secuencia de `LoadedDocument` válidos producidos por el bloque A.
 - Convierte la distancia coseno sin alterar la metadata del chunk.
 - Devuelve una respuesta con fuentes deduplicadas.
 - Activa la abstención ante una pregunta sin contexto suficiente.
-- `respond()` funciona independientemente de CLI y Streamlit.
+- `responder()` funciona independientemente de CLI y Streamlit.
 - CLI y Streamlit muestran una salida coherente para la misma pregunta.
 - Las pruebas pueden ejecutarse con los fixtures compartidos sin depender de todo el corpus real.
 
-## 13. Secuencia inicial de Git y pull requests
+## 13. Política de cambios del contrato
 
-Como el contrato es una dependencia común y todavía no está en `develop`, se recomienda fusionarlo antes de abrir las ramas técnicas.
+El contrato está integrado en `develop`. Cualquier modificación de campos,
+tipos o significado debe:
 
-1. Crear desde `develop` una rama documental, por ejemplo `docs/shared-contract`.
-2. Añadir `docs/contracts/contrato_compartido_mvp_retiro.md` y, si corresponde, sus fixtures iniciales.
-3. Abrir una PR pequeña hacia `develop`, revisada por los otros dos integrantes.
-4. Corregir y congelar las decisiones contractuales pendientes.
-5. Fusionar la PR documental.
-6. Cada integrante actualiza su copia local de `develop`.
-7. A, B y C crean entonces sus ramas técnicas desde el mismo commit de `develop`.
+1. Realizarse en una rama independiente.
+2. Actualizar productores y consumidores afectados.
+3. Actualizar fixtures, mocks y pruebas de contrato.
+4. Ser revisada por los responsables de los bloques implicados.
+5. Fusionarse mediante pull request.
 
-Esto evita que cada rama implemente una versión distinta del contrato. Si el equipo decide empezar código antes de fusionar la PR, todos deberán basarse temporalmente en el mismo commit documental y asumir una integración más delicada.
+No deben introducirse cambios incompatibles directamente en `develop`.
 
 ## 14. Fixtures compartidos
 
@@ -534,17 +543,18 @@ tests/fixtures/rag_response.json
 
 Los cuatro archivos actuarán como ejemplos ejecutables del contrato. Una modificación de su estructura deberá revisarse en equipo antes de fusionarse.
 
-## 15. Decisiones pendientes antes de congelar el contrato
+## 15. Decisiones contractuales consolidadas
 
-El equipo debe confirmar expresamente:
+Las siguientes decisiones están adoptadas para el MVP:
 
-- [ ] A entrega un `LoadedDocument` por página para los PDF.
-- [ ] Se aceptan `category` y `corpus_group` como campos separados.
-- [ ] `chunk_index` es consecutivo dentro del documento completo.
-- [ ] La colección ChromaDB utiliza distancia coseno.
-- [ ] El modelo y la versión de embeddings quedan fijados en configuración.
-- [ ] La estrategia ante cambios de chunking será reconstruir la colección.
-- [ ] Los cuatro fixtures se aprueban como referencia compartida.
+- [x] Los PDF producen un documento cargado por cada página con texto extraíble.
+- [x] `category` y `corpus_group` son campos diferentes.
+- [x] `chunk_index` es consecutivo dentro de cada documento.
+- [x] La colección ChromaDB utiliza distancia coseno.
+- [x] El modelo de embeddings se define en la configuración.
+- [x] Un cambio de corpus, chunking, modelo, dimensión o métrica requiere evaluar la reconstrucción de la colección.
+- [x] CLI y Streamlit consumen `responder()` sin duplicar la lógica RAG.
+- [x] La respuesta pública incluye `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
 
-Una vez marcadas estas decisiones, el contrato puede considerarse congelado para el MVP.
-
+El contrato se considera consolidado para el MVP. Los cambios posteriores
+deben seguir la política indicada en la sección 13.
