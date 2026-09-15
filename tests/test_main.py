@@ -202,36 +202,59 @@ def test_un_error_no_muestra_traza(monkeypatch, capsys):
     assert "Traceback" not in error
 
 
-def test_index_llama_al_pipeline(monkeypatch, capsys):
-    """--index delega en build_index y muestra el resumen."""
+def test_index_no_recrea_la_coleccion_por_defecto(monkeypatch, capsys):
+    """Sin flags, --index hace upsert: NUNCA borra la coleccion.
+
+    Reconstruir el indice consume cuota de la API y descarta horas de trabajo,
+    asi que debe pedirse a proposito con --recreate-index.
+    """
     import src.pipeline
 
     recibidos = {}
 
-    def _falso(data_dir=None, recreate=True, dry_run=False):
+    def _falso(data_dir=None, recreate=False, dry_run=False):
         recibidos.update(recreate=recreate, dry_run=dry_run)
         return {
-            "documents": 32,
+            "documents": 255,
             "sources": 17,
             "chunks": 1177,
-            "chunks_by_group": {"historia_monumentos_jardines": 400},
+            "chunks_by_group": {"historia_monumentos_jardines": 34},
             "indexed": True,
             "collection_count": 1177,
         }
 
     monkeypatch.setattr(src.pipeline, "build_index", _falso)
-    assert cli.cmd_index() == 0
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index"])
+    assert cli.main() == 0
+    assert recibidos["recreate"] is False, "El default debe ser seguro."
+    assert recibidos["dry_run"] is False
     salida = capsys.readouterr().out
     assert "1177" in salida
+    assert "Upsert" in salida
+
+
+def test_recreate_index_solo_cuando_se_pide(monkeypatch, capsys):
+    import src.pipeline
+
+    recibidos = {}
+
+    def _falso(data_dir=None, recreate=False, dry_run=False):
+        recibidos.update(recreate=recreate)
+        return {"documents": 255, "sources": 17, "chunks": 1177,
+                "chunks_by_group": {}, "indexed": True, "collection_count": 1177}
+
+    monkeypatch.setattr(src.pipeline, "build_index", _falso)
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--recreate-index"])
+    assert cli.main() == 0
     assert recibidos["recreate"] is True
-    assert recibidos["dry_run"] is False
+    assert "recreada" in capsys.readouterr().out
 
 
 def test_index_con_dry_run_no_indexa(monkeypatch, capsys):
     import src.pipeline
 
     monkeypatch.setattr(src.pipeline, "build_index", lambda **kwargs: {
-        "documents": 32, "sources": 17, "chunks": 1177,
+        "documents": 255, "sources": 17, "chunks": 1177,
         "chunks_by_group": {}, "indexed": False, "collection_count": 0,
     })
     monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--dry-run"])
