@@ -87,7 +87,7 @@ El fallo se detectó durante las pruebas con el índice real: una respuesta cita
 ### Resultados por pregunta
 
 Medición sobre el banco de 25 preguntas de `queries/banco_preguntas_bloque_c.md`
-con el índice real: 1.178 chunks, `gemini-embedding-001`, dimensión 3.072.
+con el índice real: 1.177 chunks, `gemini-embedding-001`, dimensión 3.072.
 
 | Pregunta | K | Score top-1 | Mejor fuente | ¿Tiene sentido? | Ruido |
 |---|---:|---:|---|---|---|
@@ -173,20 +173,25 @@ aciertos.
 
 | Medida | `gemini-embedding-001` |
 |---|---|
-| Score mínimo, preguntas respondibles | 0,698 |
-| Mediana del score, preguntas respondibles | 0,744 |
+| Score mínimo, preguntas respondibles (n=16) | 0,698 |
+| Mediana del score, preguntas respondibles | 0,747 |
 | Score máximo, preguntas respondibles | 0,782 |
-| Score mínimo, preguntas de abstención | 0,648 |
-| Mediana del score, preguntas de abstención | 0,712 |
-| Score máximo, preguntas de abstención | 0,768 |
-| Mejor umbral posible | 0,698 (19/25 aciertos) |
-| Umbral adoptado | **0,65** |
+| Score mínimo, preguntas de abstención (n=9) | 0,648 |
+| Mediana del score, preguntas de abstención | 0,709 |
+| Score máximo, preguntas de abstención | 0,744 |
+| Mejor umbral posible | 0,698 (20/25 aciertos) |
+| Umbral adoptado | **0,65** (17/25 aciertos) |
 
 **Las dos distribuciones se solapan casi por completo.** Todos los scores caen
-entre 0,648 y 0,782, y seis preguntas sin respuesta en el corpus puntúan por
+entre 0,648 y 0,782, y cinco preguntas sin respuesta en el corpus puntúan por
 encima de 0,70, entre ellas la del evento deportivo (0,744) y la de los
-fotógrafos (0,736). El mejor umbral posible solo acierta 19 de 25 y deja un
-margen de 0,008 sobre la pregunta respondible peor puntuada.
+fotógrafos (0,736). El mejor umbral posible acierta 20 de 25 y deja un margen de
+0,008 sobre la pregunta respondible peor puntuada.
+
+Las cifras se recalcularon sobre la misma ejecución de `calibrar_umbral.py`
+después de reclasificar la pregunta 8 como respondible: su score (0,768) pasa de
+un grupo al otro. No se reejecutó la calibración porque el score de cada
+pregunta no cambia al reclasificarla, solo cambia el grupo al que pertenece.
 
 Se adoptó 0,65 en lugar del óptimo teórico porque un umbral ajustado a estos
 datos silenciaría cualquier respuesta correcta ligeramente peor puntuada. Con
@@ -262,13 +267,18 @@ que no le corresponde.
 |---|---|---|
 | Recall, fuente única declarada | 73 % (11/15) | 80 % (12/15) |
 | Recall, cualquier fuente válida | 94 % (15/16) | 94 % (15/16) |
-| Aciertos del mejor umbral posible | 19/25 | — |
-| Aciertos con el umbral adoptado (0,65) | 16/25 | — |
+| Aciertos del mejor umbral posible | 20/25 | — |
+| Aciertos con el umbral adoptado (0,65) | 17/25 | — |
 
-Los 16/25 del umbral adoptado corresponden solo a la compuerta de score: las 15
+Los 17/25 del umbral adoptado corresponden solo a la compuerta de score: las 16
 preguntas respondibles pasan el filtro y una de abstención se detiene en él. Las
 ocho restantes dependen del centinela del prompt, que en la prueba directa
 funcionó correctamente.
+
+**Estado de la configuración:** el valor por defecto de `RAG_SCORE_MINIMO` en el
+código es 0.0, es decir, con la compuerta de score desactivada. El 0,65 se
+documenta en `.env.example` como valor recomendado y debe fijarse en el `.env`
+de cada entorno; no se aplica de forma automática.
 
 ---
 
@@ -305,7 +315,7 @@ funcionó correctamente.
 - Caso: `flora_fauna__plan_director_arbolado__madrid__v01.pdf` aparece entre los
   resultados de 13 de las 25 preguntas, incluidas las de horarios, monumentos y
   protocolos de seguridad.
-- Causa probable: de los 1.178 chunks del índice, 1.083 pertenecen al grupo de
+- Causa probable: de los 1.177 chunks del índice, 1.082 pertenecen al grupo de
   flora, fauna, arte y actividades, frente a 61 del bloque de itinerarios e
   información práctica y 34 del de historia y monumentos. Un documento muy
   extenso ocupa una proporción desmesurada del espacio vectorial.
@@ -340,10 +350,10 @@ abstenciones, la tasa de abstención y el tiempo medio.
 
 ### Métricas de la sesión de evaluación
 
-- Consultas registradas: `76`
-- Abstenciones: `43`
-- Tasa de abstención:`0.566`
-- Tiempo medio por consulta: `0.197`
+- Consultas registradas: `[RELLENAR]`
+- Abstenciones: `[RELLENAR]`
+- Tasa de abstención: `[RELLENAR]`
+- Tiempo medio por consulta: `[RELLENAR]`
 
 Tiempos observados en las pruebas directas: entre 5 y 7 segundos por consulta
 con `gemini-3.6-flash`, incluyendo retrieval y generación.
@@ -422,4 +432,3 @@ Están en el apartado 8. Para rellenarlos:
        python -c "import sys; sys.path.insert(0,'.'); from src.logging_utils import resumen_de_consultas; print(resumen_de_consultas())"
 
 3. Copia los cuatro números en el apartado 8.
-python -c "import sys; sys.path.insert(0,'.'); from src.logging_utils import resumen_de_consultas; print(resumen_de_consultas())"

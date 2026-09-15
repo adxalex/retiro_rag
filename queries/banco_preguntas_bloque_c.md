@@ -1,7 +1,7 @@
 # Banco de preguntas de evaluación · bloque C (retrieval y generación)
 
 25 preguntas probadas contra el índice real del corpus completo
-(255 registros documentales, 17 fuentes, 1.178 chunks).
+(255 registros documentales, 17 fuentes, 1.177 chunks).
 
 `Esperado` indica el comportamiento correcto del sistema:
 
@@ -53,7 +53,7 @@ trazable.
 
 ## Medición con el índice real
 
-Índice: 1.178 chunks, `gemini-embedding-001`, dimensión 3.072, métrica coseno.
+Índice: 1.177 chunks, `gemini-embedding-001`, dimensión 3.072, métrica coseno.
 Generación: `gemini-3.6-flash`. `TOP_K` por defecto: 3.
 
 ### Recall de la fuente esperada
@@ -80,21 +80,30 @@ que describe el Parterre Francés.
 
 ### Distribución del score del mejor chunk
 
-| | Mínimo | Mediana | Máximo |
-| --- | --- | --- | --- |
-| Preguntas respondibles (n=15) | 0,698 | 0,744 | 0,782 |
-| Preguntas de abstención (n=10) | 0,648 | 0,712 | 0,768 |
+Cifras recalculadas sobre la misma ejecución de `calibrar_umbral.py`, después de
+reclasificar la pregunta 8 como respondible: su score (0,768) pasa del grupo de
+abstención al de respondibles. No se reejecutó la calibración, porque los scores
+de cada pregunta no cambian al reclasificarla; solo cambia a qué grupo pertenece.
 
-Las dos distribuciones se solapan casi por completo. El mejor umbral posible
-(0,698) solo acierta 19 de 25, y deja un margen de 0,008 sobre la pregunta
+| | n | Mínimo | Mediana | Máximo |
+| --- | ---: | ---: | ---: | ---: |
+| Preguntas respondibles | 16 | 0,698 | 0,747 | 0,782 |
+| Preguntas de abstención | 9 | 0,648 | 0,709 | 0,744 |
+
+Las dos distribuciones siguen solapándose casi por completo. El mejor umbral
+posible (0,698) acierta 20 de 25, pero deja un margen de 0,008 sobre la pregunta
 respondible peor puntuada: cualquier pregunta correcta ligeramente peor quedaría
 silenciada.
 
-**Decisión: `RAG_SCORE_MINIMO = 0.65`.** No silencia ninguna respuesta correcta
-y descarta el caso más claramente irrelevante. La abstención recae, por diseño,
-en el centinela del prompt.
+**Decisión: `RAG_SCORE_MINIMO = 0.65`**, que acierta 17 de 25. Se prefiere no
+silenciar ninguna respuesta correcta y dejar que la abstención la resuelva el
+centinela del prompt.
 
-Seis preguntas sin respuesta en el corpus puntúan por encima de 0,70, entre
+El valor por defecto en el código sigue siendo 0.0, es decir, con la compuerta de
+score desactivada. El 0,65 se documenta en `.env.example` y debe fijarse en el
+`.env` de cada entorno; no está activo por omisión.
+
+Cinco preguntas sin respuesta en el corpus puntúan por encima de 0,70, entre
 ellas la del evento deportivo (0,744) y la de los fotógrafos (0,736). Esto
 confirma que un umbral de score por sí solo no basta.
 
