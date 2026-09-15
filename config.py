@@ -12,7 +12,7 @@ COLLECTION_NAME = "retiro_madrid"
 # Modelos estables seleccionados para el MVP.
 # gemini-embedding-001 devuelve un vector por texto y mantiene compatibilidad
 # con el procesamiento por lotes actual de embed.py.
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.6-flash")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
 
 # --- Chunking ---

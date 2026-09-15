@@ -26,11 +26,14 @@ from typing import Any
 
 from config import LLM_MODEL, TOP_K
 from src.gemini_auth import get_gemini_client
+from src.fuentes import describir_citas
 from src.logging_utils import Cronometro, log_query
 from src.retrieve import retrieve
 
 CENTINELA_SIN_EVIDENCIA = "SIN_EVIDENCIA"
 
+# Texto fijo en espanol. Si el banco de preguntas crece en otros idiomas,
+# convendria traducirlo segun el idioma detectado en la consulta.
 MENSAJE_ABSTENCION = (
     "No he encontrado esa informacion en los documentos del Parque del Retiro "
     "que tengo disponibles. Puedes consultarlo en la web municipal "
@@ -43,16 +46,22 @@ MENSAJE_ABSTENCION = (
 # scripts/validation/calibrar_umbral.py sobre el indice real y fijarlo en .env.
 SCORE_MINIMO = float(os.getenv("RAG_SCORE_MINIMO", "0.0"))
 
-INSTRUCCIONES = f"""Eres un asistente que informa sobre el Parque del Retiro de Madrid.
+INSTRUCCIONES = f"""Eres el asistente del Parque de El Retiro de Madrid. Hablas con un visitante.
 
-Reglas:
-1. Responde unicamente con la informacion del CONTEXTO. No uses conocimiento propio.
-2. Si el contexto no contiene la respuesta, responde exactamente {CENTINELA_SIN_EVIDENCIA} y nada mas.
-3. Si el contexto solo responde una parte, responde esa parte y di con claridad que del resto no tienes informacion.
-4. Cita las fuentes usando los numeros de fragmento, con este formato: [1], [2].
-5. Si el contexto indica que un dato tiene fecha o procede de una fuente no oficial, dilo en la respuesta.
-6. Responde en el idioma de la pregunta, en un maximo de seis frases, con un tono claro y cercano.
-7. No inventes horarios, precios, distancias ni nombres que no aparezcan en el contexto."""
+Como responder:
+1. Empieza por la respuesta util. La primera frase debe contestar lo que se pregunta, con el dato concreto: el lugar, la hora, la distancia o el nombre.
+2. Responde en el mismo idioma en que esta escrita la pregunta. Si preguntan en ingles, responde en ingles; si preguntan en catalan, en catalan.
+3. Se breve: entre una y cuatro frases. Escribe como se lo explicarias a alguien en el parque.
+4. Usa unicamente la informacion del CONTEXTO. No uses conocimiento propio.
+5. Cita los fragmentos con [1], [2] al final de la frase que sostienen.
+6. Si el contexto no contiene la respuesta, responde exactamente {CENTINELA_SIN_EVIDENCIA} y nada mas.
+7. Si el contexto solo responde una parte, contesta esa parte primero y despues di brevemente que del resto no tienes informacion.
+
+Advertencias (van al FINAL, nunca al principio):
+8. Avisa solo cuando el dato pueda haber cambiado y eso afecte a la visita: precios, horarios, obras o cierres temporales con varios anos de antiguedad. Una frase de menos de ocho palabras: "Es un dato de 2017, conviene confirmarlo."
+9. No valores la fiabilidad de las fuentes en la respuesta. No digas si son oficiales o no, ni quien las publico, ni la fecha exacta de publicacion: eso aparece en la lista de fuentes que acompana a la respuesta.
+10. No expliques que falta en el corpus ni como estan organizados los documentos. Al visitante no le sirve.
+11. No inventes horarios, precios, distancias ni nombres que no aparezcan en el contexto."""
 
 
 def _formatear_chunk(numero: int, chunk: dict) -> str:
@@ -103,14 +112,35 @@ def generate_answer(prompt: str, client: Any | None = None) -> str:
 
 
 def _fuentes_de(chunks: list[dict]) -> list[str]:
-    """Lista de fuentes citables, sin repetir y en el orden recuperado."""
+    """Lista de documentos citados, sin repetir y en el orden recuperado."""
     return list(dict.fromkeys(chunk.get("source", "desconocida") for chunk in chunks))
+
+
+def _citas_de(chunks: list[dict]) -> list[dict]:
+    """Mapa de cada numero de cita del prompt a su fragmento.
+
+    El prompt numera los fragmentos del 1 al top_k, asi que el modelo puede
+    citar [3] aunque los tres fragmentos vengan del mismo documento. La lista
+    'fuentes' agrupa por documento y no sirve para resolver esas citas: por eso
+    se expone tambien esta correspondencia numero -> fragmento.
+    """
+    return [
+        {
+            "n": numero,
+            "source": chunk.get("source", "desconocida"),
+            "page": chunk.get("page"),
+            "chunk_id": chunk.get("chunk_id"),
+            "score": chunk.get("score"),
+        }
+        for numero, chunk in enumerate(chunks, start=1)
+    ]
 
 
 def _abstencion(pregunta: str, chunks: list[dict], motivo: str) -> dict:
     return {
         "respuesta": MENSAJE_ABSTENCION,
         "fuentes": [],
+        "citas": [],
         "chunks": chunks,
         "abstuvo": True,
         "motivo_abstencion": motivo,
@@ -177,6 +207,7 @@ def _responder_con_chunks(
     return {
         "respuesta": texto,
         "fuentes": _fuentes_de(chunks),
+        "citas": describir_citas(_citas_de(chunks)),
         "chunks": chunks,
         "abstuvo": False,
         "motivo_abstencion": None,

@@ -16,6 +16,7 @@ sirven para comprobar el metodo.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -77,11 +78,29 @@ def main() -> int:
         if total > mejor_aciertos:
             mejor_umbral, mejor_aciertos = umbral, total
 
+    # Se trunca hacia abajo, nunca se redondea: redondear al alza puede cruzar
+    # el score de una pregunta respondible y silenciarla.
+    sugerido = math.floor(mejor_umbral * 100) / 100
     print(
         f"\nMejor umbral con estos datos: {mejor_umbral:.3f} "
         f"({mejor_aciertos}/{len(PREGUNTAS)} aciertos)"
     )
-    print("Para aplicarlo, en .env:  RAG_SCORE_MINIMO=" f"{mejor_umbral:.2f}")
+    print(f"Para aplicarlo, en .env:  RAG_SCORE_MINIMO={sugerido:.2f}")
+
+    minimo_respondible = min((s for s, _ in con_respuesta), default=None)
+    if minimo_respondible is not None:
+        margen = minimo_respondible - sugerido
+        print(
+            f"Score mas bajo entre las respondibles: {minimo_respondible:.3f} "
+            f"(margen de {margen:.3f})."
+        )
+        if margen < 0.02:
+            print(
+                "AVISO: margen muy estrecho. El umbral esta ajustado a estos "
+                "datos y una pregunta correcta ligeramente peor quedaria "
+                "silenciada. Considera bajarlo y dejar que la abstencion la "
+                "resuelva el centinela del prompt."
+            )
     if args.simulado:
         print(
             "\nAVISO: scores de embeddings de juguete. Repite la calibracion con "
