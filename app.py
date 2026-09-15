@@ -42,8 +42,7 @@ def _renderizar_banner_clima() -> None:
         for peculiaridad in contexto.get("peculiaridades", []):
             st.caption(peculiaridad)
         if contexto.get("fuente"):
-            st.caption(f"Fuente: {contexto['fuente']}. Dato en tiempo real, "
-                       "no procede del corpus.")
+            st.caption(f"Tiempo actual, medido por {contexto['fuente']}.")
 
 
 def _renderizar_historial() -> None:
@@ -62,9 +61,10 @@ def _renderizar_respuesta(respuesta: dict) -> None:
     else:
         st.write(respuesta["respuesta"])
 
-    fuentes = respuesta.get("fuentes") or []
-    if fuentes:
-        st.caption("Fuentes recuperadas: " + ", ".join(fuentes))
+    citas = respuesta.get("citas") or []
+    for cita in citas:
+        marca = "" if cita["oficial"] else "⚠ "
+        st.caption(f"[{cita['n']}] {marca}{cita['texto']}")
 
     chunks = respuesta.get("chunks") or []
     if chunks:

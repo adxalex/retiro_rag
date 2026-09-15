@@ -24,7 +24,8 @@ from src.generate import (  # noqa: E402
     responder,
 )
 
-CAMPOS_DE_SALIDA = {"respuesta", "fuentes", "chunks", "abstuvo", "motivo_abstencion"}
+CAMPOS_DE_SALIDA = {"respuesta", "fuentes", "citas", "chunks", "abstuvo",
+                    "motivo_abstencion"}
 
 
 def chunk(score, source="guia.pdf", texto="El parque abre de 6:00 a 22:00.", **extra):
@@ -299,3 +300,51 @@ def test_responder_registra_la_consulta(tmp_path, monkeypatch):
     assert "score_bajo" in registros[1]["motivo_abstencion"]
     assert registros[0]["score_top1"] == pytest.approx(0.82)
     assert registros[0]["tiempo_s"] >= 0
+
+
+# --- correspondencia entre numeros de cita y fragmentos --------------------
+
+
+def test_las_citas_siguen_la_numeracion_del_prompt():
+    """El prompt numera 1..top_k, aunque los chunks sean del mismo documento."""
+    coleccion = ColeccionFalsa(
+        [chunk(0.9, "guia.pdf"), chunk(0.8, "guia.pdf"), chunk(0.7, "guia.pdf")]
+    )
+    salida = responder("x", top_k=3, collection=coleccion,
+                       client=ClienteFalso(), score_minimo=0.30)
+    assert [c["n"] for c in salida["citas"]] == [1, 2, 3]
+    assert salida["fuentes"] == ["guia.pdf"], "fuentes agrupa por documento"
+    assert len(salida["citas"]) == 3, "citas mantiene una entrada por fragmento"
+
+
+def test_cada_cita_lleva_documento_pagina_y_chunk():
+    coleccion = ColeccionFalsa([chunk(0.9, "guia.pdf")])
+    cita = responder("x", collection=coleccion, client=ClienteFalso(),
+                     score_minimo=0.30)["citas"][0]
+    assert cita["source"] == "guia.pdf"
+    assert cita["page"] == 1
+    assert cita["chunk_id"] == "guia.pdf__0000"
+
+
+def test_la_abstencion_no_lleva_citas():
+    salida = responder("x", collection=ColeccionFalsa([chunk(0.05)]),
+                       client=ClienteFalso(), score_minimo=0.30)
+    assert salida["citas"] == []
+
+
+def test_las_citas_llevan_el_nombre_legible_de_la_fuente():
+    """El usuario no debe leer nombres de fichero."""
+    coleccion = ColeccionFalsa(
+        [chunk(0.8, "informacion_practica_guia_visitante_retiro.pdf")]
+    )
+    cita = responder("x", collection=coleccion, client=ClienteFalso(),
+                     score_minimo=0.30)["citas"][0]
+    assert cita["titulo"] == "Guía del visitante del Retiro"
+    assert cita["oficial"] is True
+    assert ".pdf" not in cita["texto"]
+    assert cita["source"] == "informacion_practica_guia_visitante_retiro.pdf"
+
+
+def test_el_prompt_pide_responder_en_el_idioma_de_la_pregunta():
+    prompt = build_prompt("What time does the park close?", [chunk(0.8)])
+    assert "mismo idioma" in prompt
