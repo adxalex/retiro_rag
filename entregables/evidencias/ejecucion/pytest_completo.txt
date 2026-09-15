@@ -1,0 +1,32 @@
+........................................................................ [ 24%]
+........................................................................ [ 49%]
+........................................................................ [ 74%]
+.............................................................
+  Recall@5 con embeddings de juguete: 9/15 = 60%
+    [no encontrada] ┐QuÚ rey impuls¾ la creaci¾n del Retiro como espacio palacie
+        esperaba retiro_historia.md, devolvio ['actividades__guia_retiro__fuentes_mixtas__v01.md', 'flora_fauna__plan_director_arbolado__madrid__v01.pdf', 'itinerarios_pie_retiro_.pdf', 'itinerarios_running_retiro_.pdf']
+    [no encontrada] ┐QuÚ caracterÝstica arquitect¾nica distingue al Palacio de C
+        esperaba retiro_palacio_cristal_velazquez.md, devolvio ['actividades__guia_retiro__fuentes_mixtas__v01.md', 'flora_fauna__plan_director_arbolado__madrid__v01.pdf']
+    [no encontrada] ┐QuÚ jardÝn del Retiro es famoso por sus parterres geomÚtric
+        esperaba informacion_practica_guia_visitante_retiro.pdf, devolvio ['arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md', 'flora_fauna__plan_director_arbolado__madrid__v01.pdf', 'flora_fauna__senda_botanica__madrid__v01.pdf']
+    [no encontrada] ┐QuÚ ßrbol centenario del Retiro estß catalogado como uno de
+        esperaba itinerarios_pie_retiro_.pdf, devolvio ['flora_fauna__guia_aves_comunes__madrid__v01.pdf', 'flora_fauna__plan_director_arbolado__madrid__v01.pdf']
+    [no encontrada] ┐QuÚ instituci¾n oficial respalda la informaci¾n turÝstica d
+        esperaba informacion_practica_guia_visitante_retiro.pdf, devolvio ['flora_fauna__guia_aves_comunes__madrid__v01.pdf', 'flora_fauna__plan_director_arbolado__madrid__v01.pdf', 'flora_fauna__resumen_inventario_arbolado_retiro__madrid__v01.md']
+    [no encontrada] Me encuentro mal del est¾mago y necesito ir al ba±o, estoy j
+        esperaba informacion_practica_guia_visitante_retiro.pdf, devolvio ['flora_fauna__plan_director_arbolado__madrid__v01.pdf', 'flora_fauna__senda_botanica__madrid__v01.pdf', 'informacion_practica_bicicleta_retiro.pdf', 'itinerarios_pie_retiro_.pdf']
+.
+  Recall@3 = 47% À Recall@5 = 60%
+.......... [ 99%]
+..                                                                       [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\google\genai\types.py:42
+  <repo>\.venv\Lib\site-packages\google\genai\types.py:42: DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17
+    VersionedUnionType = Union[builtin_types.UnionType, _UnionGenericAlias]
+
+.venv\Lib\site-packages\chromadb\telemetry\opentelemetry\__init__.py:128
+  <repo>\.venv\Lib\site-packages\chromadb\telemetry\opentelemetry\__init__.py:128: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(f):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+290 passed, 2 warnings in 7.91s
