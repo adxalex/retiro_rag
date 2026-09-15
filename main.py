@@ -47,17 +47,9 @@ def _fragmento(numero: int, chunk: dict, caracteres: int = 300) -> None:
 
 def cmd_index(recreate: bool = False) -> int:
     """Carga, chunkea e indexa el corpus completo."""
-    try:
-        from src.pipeline import indexar_corpus
-    except ImportError:
-        print(
-            "El orquestador de indexacion (src/pipeline.py) todavia no esta en "
-            "esta rama. Se integra con la PR del bloque B.",
-            file=sys.stderr,
-        )
-        return 1
+    from src.pipeline import build_index
 
-    resultado = indexar_corpus(recreate=recreate)
+    resultado = build_index(recreate=recreate)
     _titulo("Indexacion completada")
     print(resultado)
     return 0

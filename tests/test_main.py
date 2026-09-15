@@ -177,7 +177,8 @@ def test_top_k_invalido_es_error(monkeypatch):
 
 
 def test_main_enruta_a_ask(monkeypatch, responder_falso, capsys):
-    monkeypatch.setattr(sys, "argv", ["main.py", "--ask", "¿A que hora cierra?"])
+    monkeypatch.setattr(
+        sys, "argv", ["main.py", "--ask", "¿A que hora cierra?"])
     assert cli.main() == 0
     assert "Pregunta:" in capsys.readouterr().out
 
@@ -202,11 +203,31 @@ def test_un_error_no_muestra_traza(monkeypatch, capsys):
     assert "Traceback" not in error
 
 
-def test_index_sin_pipeline_avisa(monkeypatch, capsys):
-    """Mientras el orquestador no este integrado, --index avisa sin romperse."""
-    monkeypatch.setitem(sys.modules, "src.pipeline", None)
-    assert cli.cmd_index() == 1
-    assert "pipeline" in capsys.readouterr().err
+def test_index_conecta_con_pipeline(monkeypatch, capsys):
+    """Comprueba que --index utiliza el pipeline sin servicios externos."""
+    import src.pipeline
+
+    received = {}
+
+    def fake_build_index(*, recreate):
+        received["recreate"] = recreate
+        return {
+            "indexed": True,
+            "collection_count": 1177,
+        }
+
+    monkeypatch.setattr(
+        src.pipeline,
+        "build_index",
+        fake_build_index,
+    )
+
+    assert cli.cmd_index(recreate=True) == 0
+    assert received["recreate"] is True
+
+    output = capsys.readouterr().out
+    assert "Indexacion completada" in output
+    assert "1177" in output
 
 
 def test_coleccion_inexistente_explica_como_indexar(monkeypatch, capsys):

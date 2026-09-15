@@ -1,0 +1,361 @@
+[RETRIEVE] '¿En qué siglo se construyó originalmente el Real Sitio del B' -> 5 chunks (top_k=5)
+OK P01 [responde  ] score_top1=0.744  ¿En qué siglo se construyó originalmente el Real Sitio del Buen Reti
+        fuentes: flora_fauna__plan_director_arbolado__madrid__v01.pdf, retiro_historia.md, retiro_jardines.md, arte_cultura__retiro_paisaje_de_la_luz__fuentes_academicas_unesco__v01.md
+        0.744 propiedad real que adquirió el nombre de « Real Sitio del Buen Retiro » mediante una real
+pragmátic
+        0.738 Los jardines del Buen Retiro fueron creados por Felipe IV en el siglo XVII como finca de recreo para
+        0.738 ## Historia del parque
+
+El Parque del Buen Retiro empezó a construirse en 1630 por orden del Conde-D
+        0.716 Los jardines de El Buen Retiro, conocidos simplemente como El Retiro, es uno de los lugares más embl
+        0.703 ## Unión histórica entre el Paseo del Prado y el Buen Retiro
+
+El Paseo del Prado aparece documentado
+[RETRIEVE] '¿Qué rey impulsó la creación del Retiro como espacio palacie' -> 5 chunks (top_k=5)
+OK P02 [responde  ] score_top1=0.754  ¿Qué rey impulsó la creación del Retiro como espacio palaciego y de
+        fuentes: retiro_historia.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf, retiro_jardines.md
+        0.754 Los jardines del Buen Retiro fueron creados por Felipe IV en el siglo XVII como finca de recreo para
+        0.725 el 18 de febrero de 1701, visita el Buen Retiro recibiendo las llaves de manos del Marques de
+Legan
+        0.713 propiedad real que adquirió el nombre de « Real Sitio del Buen Retiro » mediante una real
+pragmátic
+        0.711 Puerta de entrada al Buen Retiro. Realizada por Melchor de Bueras, para conmemorar la entrada en Mad
+        0.710 ## Historia del parque
+
+El Parque del Buen Retiro empezó a construirse en 1630 por orden del Conde-D
+[RETRIEVE] '¿Cuál es la entrada más utilizada para iniciar un recorrido ' -> 5 chunks (top_k=5)
+   P03 [abstencion] score_top1=0.725  ¿Cuál es la entrada más utilizada para iniciar un recorrido turístic
+        fuentes: flora_fauna__plan_director_arbolado__madrid__v01.pdf, itinerarios_pie_retiro_.pdf, informacion_practica_guia_visitante_retiro.pdf
+        0.725 parque es referencia obligada para todos aquellos turistas que visitan Madrid, y la cercanía a otros
+        0.708 48
+3.5.2  EL RETIRO RECORRIDO
+El Retiro recorrido es un paseo por el corazón del parque, un traye
+        0.708 Rutas a pie por el Parque del Retiro (Madrid)
+Tres recorridos a pie: dos por el interior del parque
+        0.700 Coches hasta llevarnos a la Puerta de Madrid, donde concluye.
+La elección de este recorrido está mo
+        0.699 Accesos y puertas del Retiro
+Accesos del parque. El Retiro tiene 18 entradas, de las cuales 14 son a
+[RETRIEVE] '¿Qué monumento preside el Estanque Grande del Retiro?' -> 5 chunks (top_k=5)
+OK P04 [responde  ] score_top1=0.782  ¿Qué monumento preside el Estanque Grande del Retiro?
+        fuentes: retiro_monumentos_jardines.csv, retiro_jardines.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf, informacion_practica_guia_visitante_retiro.pdf
+        0.782 Estanque Grande: Estanque monumental de El Retiro donde se pueden alquilar barcas de remo, rodeado p
+        0.773 ## Principales atractivos
+
+**Estanque Grande**: El Retiro alberga un estanque monumental donde se pu
+        0.750 una de las zonas más concurridas del Parque.
+
+Desde finales del siglo XIX hasta nuestro s días, el
+        0.740 Fuente: esMadrid (Turismo de Madrid), «Parque de El Retiro», actualizado el 19/08/2026. esMadrid no
+        0.734 Monumento a Alfonso XII: Conjunto escultórico junto al Estanque Grande, también conocido como Monume
+[RETRIEVE] '¿Qué edificio del Retiro se utiliza actualmente para exposic' -> 5 chunks (top_k=5)
+KO P05 [responde  ] score_top1=0.750  ¿Qué edificio del Retiro se utiliza actualmente para exposiciones de
+        fuentes: actividades__guia_retiro__fuentes_mixtas__v01.md, arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md, retiro_palacio_cristal_velazquez.md, retiro_monumentos_jardines.csv
+        esperaba: informacion_practica_guia_visitante_retiro.pdf
+        0.750 ## Arte y exposiciones
+
+El Palacio de Velázquez y el Palacio de Cristal son sedes expositivas del Mu
+        0.749 # Palacio de Cristal y Palacio de Velázquez
+
+## Dos sedes históricas en El Retiro
+
+El Palacio de Vel
+        0.748 Las dos sedes del Museo Reina Sofía en el Parque del Retiro, el Palacio de Velázquez y el Palacio de
+        0.748 Palacio de Velázquez: Pabellón construido en 1883 por Ricardo Velázquez Bosco para la Exposición Nac
+        0.747 Palacio de Cristal: Pabellón de hierro y cristal construido en 1887 por Ricardo Velázquez Bosco para
+[RETRIEVE] '¿Qué característica arquitectónica distingue al Palacio de C' -> 5 chunks (top_k=5)
+OK P06 [responde  ] score_top1=0.750  ¿Qué característica arquitectónica distingue al Palacio de Cristal?
+        fuentes: retiro_palacio_cristal_velazquez.md, arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md, retiro_monumentos_jardines.csv
+        0.750 El Palacio se organiza en tres cuerpos cuadrangulares unidos por galerías con arquerías. Destaca el
+        0.729 La Exposición General de las Islas Filipinas, inaugurada en 1887 en el Palacio de Cristal, tenía un
+        0.723 El edificio toma como referencia el Crystal Palace de Londres. Su construcción fue posible en aproxi
+        0.719 Palacio de Cristal: Pabellón de hierro y cristal construido en 1887 por Ricardo Velázquez Bosco para
+        0.713 Su planta se organiza en tres cuerpos comunicados mediante galerías. El espacio central, de mayor al
+[RETRIEVE] '¿Qué función tenía originalmente la Casa de Vacas?' -> 5 chunks (top_k=5)
+   P07 [abstencion] score_top1=0.692  ¿Qué función tenía originalmente la Casa de Vacas?
+        fuentes: informacion_practica_guia_visitante_retiro.pdf, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.692 restaurada y en funcionamiento.
+Equipamientos dentro del parque: Centro Deportivo Municipal La Chope
+        0.651 Católicos ordenaron que se construyera un  aposento o “Cuarto Real” para ser utilizado por la
+Famil
+        0.638 posteriormente utilizará la Real Casa para hacer valer las preeminencias concedidas por Felipe IV al
+        0.630 40
+Con ello queda establecido el Retiro tal y como se conoce hoy en día, con una superficie de
+una
+        0.629 nuevo emplazamiento y el lugar elegido fue el Prado. La localización no podía ser mejor, en una
+lad
+[RETRIEVE] '¿Qué tipo de fauna es más habitual encontrar en el Estanque ' -> 5 chunks (top_k=5)
+   P08 [abstencion] score_top1=0.768  ¿Qué tipo de fauna es más habitual encontrar en el Estanque Grande?
+        fuentes: flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md
+        0.768 # Fauna del Estanque Grande del Retiro
+
+## Alcance
+
+Esta ficha resume información contrastada sobre
+        0.756 ## Criterio de confianza
+
+- **Carpas como fauna piscícola predominante:** confianza alta, al coincid
+        0.748 ## Otras especies del entorno
+
+En el Parque del Retiro viven numerosas especies de aves, reptiles, a
+        0.707 ## Fuentes
+
+1. Noticias Retiro. «El Parque del Retiro es el Arca de Noé de la fauna en el centro de
+        0.696 También se ha documentado la presencia de peces gato y percasoles. Durante el vaciado y las labores
+[RETRIEVE] '¿Qué jardín del Retiro es famoso por sus parterres geométric' -> 5 chunks (top_k=5)
+KO P09 [responde  ] score_top1=0.733  ¿Qué jardín del Retiro es famoso por sus parterres geométricos y su
+        fuentes: flora_fauna__senda_botanica__madrid__v01.pdf, flora_fauna__plan_director_arbolado__madrid__v01.pdf, retiro_jardines.md
+        esperaba: informacion_practica_guia_visitante_retiro.pdf
+        0.733 Dep. Legal: M-5911-2025
+Este primer tramo de senda parte de
+los jardines que aún conservan la
+plan
+        0.723 Madrid, ubicado en la zona de la Chopera.
+La variedad de estilos de jardinería que se pueden encont
+        0.713 más de trescientos almendros que
+componen el Huerto del Francés,
+composición arbórea que prevaleci
+        0.709 Los jardines de El Buen Retiro, conocidos simplemente como El Retiro, es uno de los lugares más embl
+        0.709 5. Jardines de Cecilio Rodríguez
+y Herrero de Palacios
+6. El antiguo Reservado
+7. La Zona de Recreo
+[RETRIEVE] '¿Qué árbol centenario del Retiro está catalogado como uno de' -> 5 chunks (top_k=5)
+OK P10 [responde  ] score_top1=0.753  ¿Qué árbol centenario del Retiro está catalogado como uno de los más
+        fuentes: flora_fauna__senda_botanica__madrid__v01.pdf, informacion_practica_guia_visitante_retiro.pdf, itinerarios_pie_retiro_.pdf
+        0.753 “Árboles Singulares” según el Catálogo
+Regional de especies amenazadas de
+fauna y flora silvestres
+        0.748 años, y el olivo de 627 años (hacia 1396) plantado en una pradera próxima a la Puerta del Ángel
+Caíd
+        0.739 podría tener unos 400 años. Según esMadrid, el árbol más antiguo del Retiro es hoy un olivo de
+627 a
+        0.718 Tramo 4.
+También hay que destacar como
+árboles singulares el tejo ( Taxus
+baccata) del Palacio de
+        0.718 como la secuoya roja y el huingan.
+CERCANÍAS
+Atocha Cercanías
+3. La Rosaleda
+43
+49
+*
+En los Jardine
+[RETRIEVE] '¿Qué evento deportivo multitudinario suele atravesar el Reti' -> 5 chunks (top_k=5)
+   P11 [abstencion] score_top1=0.744  ¿Qué evento deportivo multitudinario suele atravesar el Retiro cada
+        fuentes: retiro_jardines.md, actividades__guia_retiro__fuentes_mixtas__v01.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf, informacion_practica_guia_visitante_retiro.pdf
+        0.744 ## Actividades y eventos
+
+El Retiro es un punto neurálgico para actividades culturales y recreativas
+        0.733 Una mención comercial no debe interpretarse como garantía de que un vehículo pueda circular por cual
+        0.731 ## Running y caminatas organizadas
+
+Además del uso autónomo del parque, existen comunidades que conv
+        0.722 162
+años, ha sido típico también que muchos eventos deportivos tengan su salida, finalización o par
+        0.720 Actividades que se pueden hacer en el Retiro
+Pasear y hacer deporte: el Retiro es uno de los lugares
+[RETRIEVE] '¿Qué norma de seguridad se recomienda especialmente en zonas' -> 5 chunks (top_k=5)
+   P12 [abstencion] score_top1=0.685  ¿Qué norma de seguridad se recomienda especialmente en zonas cercana
+        fuentes: flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf, flora_fauna__guia_aves_comunes__madrid__v01.pdf
+        0.685 ## Criterio de confianza
+
+- **Carpas como fauna piscícola predominante:** confianza alta, al coincid
+        0.670 con el nombre de las Campanillas, y entre ambos se extendían variados cuadros de plantación
+con tod
+        0.670 3. Wikipedia. «Estanque Grande del Buen Retiro». Utilizada como fuente de contraste y punto de acces
+        0.668 existente en el parte.
+Además, en la formación de equipos y brigadas, debe tenerse siempre en cuent
+        0.668 servatorio de aves junto a una pequeña lámina de agua ro-
+deada de vegetación acuática y palustre.
+E
+[RETRIEVE] '¿Qué edificio del Retiro fue utilizado como cuartel durante ' -> 5 chunks (top_k=5)
+OK P13 [parcial   ] score_top1=0.744  ¿Qué edificio del Retiro fue utilizado como cuartel durante la Guerr
+        fuentes: retiro_historia.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.744 Las sucesivas demoliciones del recinto y los graves destrozos que sufrió durante la Guerra de la Ind
+        0.705 lugar elegido por el Rey para instalar la nueva Fábrica de Porcelana fue exactamente donde se
+encon
+        0.700 28
+Inicialmente constituido por un palacio y unos jardines que nacieron al abrigo del monasterio de
+        0.684 nuevos- puntos de la ciudad colindante. Se arreglaron entonces numerosos paseos y otros se
+hicieron
+        0.684 48
+3.5.2  EL RETIRO RECORRIDO
+El Retiro recorrido es un paseo por el corazón del parque, un traye
+[RETRIEVE] '¿Qué espacio del parque es conocido por sus actividades de l' -> 5 chunks (top_k=5)
+   P14 [abstencion] score_top1=0.712  ¿Qué espacio del parque es conocido por sus actividades de lectura y
+        fuentes: actividades__guia_retiro__fuentes_mixtas__v01.md, retiro_jardines.md, informacion_practica_guia_visitante_retiro.pdf, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.712 Fuentes:
+
+- https://www.esmadrid.com/informacion-turistica/parque-del-retiro
+- https://teatrotiteres
+        0.685 ## Actividades y eventos
+
+El Retiro es un punto neurálgico para actividades culturales y recreativas
+        0.680 directamente de grifos o caños de agua de uso público.
+Servicios del Retiro
+Servicios que indica esM
+        0.677 162
+años, ha sido típico también que muchos eventos deportivos tengan su salida, finalización o par
+        0.675 ## Educación ambiental
+
+El Centro de Educación Ambiental El Retiro se encuentra en el paseo de Ferná
+[RETRIEVE] '¿Qué ruta del Retiro incluye el Palacio de Cristal, el Estan' -> 5 chunks (top_k=5)
+OK P15 [responde  ] score_top1=0.773  ¿Qué ruta del Retiro incluye el Palacio de Cristal, el Estanque y el
+        fuentes: itinerarios_pie_retiro_.pdf, informacion_practica_guia_visitante_retiro.pdf
+        0.773 del Buen Retiro.
+Qué se ve en el recorrido completo por el interior: Estanque Grande, Monumento a Al
+        0.763 cualquier acompañante.
+Tramo 1 de 6 — Entrada por la Puerta de la Independencia y paseo hasta el Est
+        0.746 hierro en España (según esMadrid).
+Tramo 4 de 6 — Del Palacio de Cristal al Palacio de Velázquez, am
+        0.735 Fuente: esMadrid (Turismo de Madrid), «Parque de El Retiro», actualizado el 19/08/2026. esMadrid no
+        0.728 podría tener unos 400 años. Según esMadrid, el árbol más antiguo del Retiro es hoy un olivo de
+627 a
+[RETRIEVE] '¿Qué institución oficial respalda la información turística d' -> 5 chunks (top_k=5)
+KO P16 [responde  ] score_top1=0.731  ¿Qué institución oficial respalda la información turística del Retir
+        fuentes: actividades__guia_retiro__fuentes_mixtas__v01.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        esperaba: informacion_practica_guia_visitante_retiro.pdf
+        0.731 Una mención comercial no debe interpretarse como garantía de que un vehículo pueda circular por cual
+        0.727 ---
+document_id: actividades__guia_retiro__fuentes_mixtas__v01
+title: Actividades deportivas, cultur
+        0.724 Fuentes de consulta:
+
+- Agenda municipal: https://datos.madrid.es/dataset/300107-0-agenda-actividade
+        0.722 documentos originales sobre El Retiro no aparecen los datos más específicos sobre ella –como es
+hab
+        0.721 ## Criterios que debe aplicar el asistente
+
+El asistente puede afirmar que en El Retiro se practican
+[RETRIEVE] '¿Qué horario aproximado tiene el parque durante los meses de' -> 5 chunks (top_k=5)
+OK P17 [responde  ] score_top1=0.721  ¿Qué horario aproximado tiene el parque durante los meses de verano?
+        fuentes: informacion_practica_guia_visitante_retiro.pdf, actividades__guia_retiro__fuentes_mixtas__v01.md, flora_fauna__senda_botanica__madrid__v01.pdf, seguridad_protocolo_alertas_retiro.pdf
+        0.721 Información práctica para visitar el Parque del Retiro
+(Madrid)
+Horarios, accesos, transporte, zonas
+        0.721 Los horarios de cierre varían a lo largo del año en función de la puesta de sol. El precio, los turn
+        0.707 jbuenretiro@madrid.es
+De martes a domingo y festivos
+Verano (abr.–sep.) 10 a 14 y 17 a 18,30 h
+(jul.
+        0.702 en verano sin reducir la seguridad. La nota oficial no detalla en esta modificación el umbral de la
+
+        0.692 Las áreas caninas del parque abren a las 7:30 y cierran con el cierre del parque.
+El horario puede v
+[RETRIEVE] '¿Qué zona del Retiro es considerada de especial interés para' -> 5 chunks (top_k=5)
+   P18 [abstencion] score_top1=0.736  ¿Qué zona del Retiro es considerada de especial interés para fotógra
+        fuentes: arte_cultura__retiro_paisaje_de_la_luz__fuentes_academicas_unesco__v01.md, informacion_practica_guia_visitante_retiro.pdf
+        0.736 ## Naturaleza, artes y ciencias
+
+El valor de El Retiro dentro del Paisaje de la Luz no depende solam
+        0.731 ## Nota de uso para el RAG
+
+Este documento es una síntesis multifuente. Puede utilizarse para respon
+        0.729 Fuente: esMadrid (Turismo de Madrid), «Parque de El Retiro», actualizado el 19/08/2026. esMadrid no
+        0.720 ## Significado del reconocimiento
+
+El encuadre de El Retiro dentro del Paisaje de la Luz permite int
+        0.713 Zonas y espacios del Retiro
+Dimensiones del parque: 125 hectáreas y más de 15.000 árboles. Patrimoni
+[RETRIEVE] '¿Qué elemento del Retiro está dedicado a Alfonso XII?' -> 5 chunks (top_k=5)
+OK P19 [responde  ] score_top1=0.781  ¿Qué elemento del Retiro está dedicado a Alfonso XII?
+        fuentes: flora_fauna__plan_director_arbolado__madrid__v01.pdf, retiro_monumentos_jardines.csv, retiro_historia.md, informacion_practica_guia_visitante_retiro.pdf
+        0.781 una de las zonas más concurridas del Parque.
+
+Desde finales del siglo XIX hasta nuestro s días, el
+        0.777 Estanque Grande: Estanque monumental de El Retiro donde se pueden alquilar barcas de remo, rodeado p
+        0.773 El carácter monumental de El Retiro enriquecido por los principales escultores del siglo XX, convier
+        0.768 Fuente: esMadrid (Turismo de Madrid), «Parque de El Retiro», actualizado el 19/08/2026. esMadrid no
+        0.767 numerosas estatuas conmemorativas, que han ido convirtiendo el Parque en un museo al aire
+libre.
+
+[RETRIEVE] '¿Qué edificio del Retiro se caracteriza por su estilo neomud' -> 5 chunks (top_k=5)
+   P20 [abstencion] score_top1=0.709  ¿Qué edificio del Retiro se caracteriza por su estilo neomudéjar?
+        fuentes: flora_fauna__plan_director_arbolado__madrid__v01.pdf, arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md
+        0.709 Madrid, ubicado en la zona de la Chopera.
+La variedad de estilos de jardinería que se pueden encont
+        0.708 OTROS PABELLON CECILIO RODRIGUEZ CECILIO RODRIGUEZ
+OTROS AULA DE ECOLOGIA "LA CABAÑA" ENCINAR
+OTRO
+        0.698 34
+En los jardines del Retiro se construyeron varias ermitas: a saber las de San Juan y Santa María
+        0.696 # Palacio de Cristal y Palacio de Velázquez
+
+## Dos sedes históricas en El Retiro
+
+El Palacio de Vel
+        0.695 una de las zonas más concurridas del Parque.
+
+Desde finales del siglo XIX hasta nuestro s días, el
+[RETRIEVE] '¿Qué punto del parque se considera ideal para iniciar una ru' -> 5 chunks (top_k=5)
+OK P21 [responde  ] score_top1=0.718  ¿Qué punto del parque se considera ideal para iniciar una ruta de «L
+        fuentes: itinerarios_pie_retiro_.pdf, actividades__guia_retiro__fuentes_mixtas__v01.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.718 orientativos y no proceden de esa fuente.
+Ficha de la ruta Lo esencial del Retiro (datos orientativo
+        0.694 Rutas a pie por el Parque del Retiro (Madrid)
+Tres recorridos a pie: dos por el interior del parque
+        0.687 Este documento es una síntesis editorial creada para el corpus RAG. No sustituye las normas del parq
+        0.683 Ruta a pie: recorrido completo por el interior
+Origen: recorrido propuesto por el equipo del proyect
+        0.682 debe ser evaluada con carácter individual en los Planes de Gestión de las distintas zonas del
+parqu
+[RETRIEVE] '¿Qué protocolo se recomienda seguir si un visitante se pierd' -> 5 chunks (top_k=5)
+   P22 [abstencion] score_top1=0.678  ¿Qué protocolo se recomienda seguir si un visitante se pierde dentro
+        fuentes: seguridad_protocolo_alertas_retiro.pdf, actividades__guia_retiro__fuentes_mixtas__v01.md, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.678 Seguridad en el Parque del Retiro (Madrid): protocolo de
+alertas meteorológicas
+Qué es el protocolo
+        0.670 Este documento es una síntesis editorial creada para el corpus RAG. No sustituye las normas del parq
+        0.668 del Parque del Oeste aplican los mismos umbrales que el Retiro, porque su arbolado es parecido.
+El p
+        0.667  Plan de revisión del arbolado mediante el Protocolo de Riesgo del Arbolado: la aplicación,
+sobre
+        0.664 Por qué existe el protocolo del Retiro
+Fuente: Ayuntamiento de Madrid, nota de prensa del 18/06/2026
+[RETRIEVE] 'Me encuentro mal del estómago y necesito ir al baño, estoy j' -> 5 chunks (top_k=5)
+OK P23 [parcial   ] score_top1=0.698  Me encuentro mal del estómago y necesito ir al baño, estoy justo en
+        fuentes: informacion_practica_guia_visitante_retiro.pdf, itinerarios_running_retiro_.pdf
+        0.698 No se ha localizado un listado oficial de aseos. Según un informe de la Asociación de Amigos del
+Bue
+        0.675 Tramo de running para cuestas (475 m)
+Ficha del tramo de cuestas. Distancia: 475 metros, desde la pu
+        0.672 ejemplos de la arquitectura del hierro en España. En 2026 su interior está cerrado por obras y se
+pu
+        0.666 pie por el Retiro.
+Transporte para llegar al Retiro
+Metro: Retiro (línea 2), Ibiza (línea 9), Atocha
+        0.660 Coches, desde el Paseo de Venezuela hasta la glorieta del Ángel Caído. Terreno: prácticamente
+llano,
+[RETRIEVE] '¿Qué harías si durante el recorrido alguien asegura haber vi' -> 5 chunks (top_k=5)
+   P24 [abstencion] score_top1=0.641  ¿Qué harías si durante el recorrido alguien asegura haber visto una
+        fuentes: itinerarios_pie_retiro_.pdf, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.641 Municipal de Piragüismo, dirigida a niños y jóvenes de 7 a 17 años (según esMadrid).
+Paso 3 de 6 — B
+        0.639 153
+En la caracterización básica se tiene idea de la profundidad de este hecho que, por lo general
+        0.635 de caídas de ramas o árboles.
+b) Toma de muestras y captación de toda aquella información que permi
+        0.635 48
+3.5.2  EL RETIRO RECORRIDO
+El Retiro recorrido es un paseo por el corazón del parque, un traye
+        0.634 capa conformada por este tipo de áridos para asegurar la estabilidad al vuelco de estos pies. En
+ma
+[RETRIEVE] 'Hay alerta naranja y estoy en el lago, ¿qué hago?' -> 5 chunks (top_k=5)
+OK P25 [responde  ] score_top1=0.710  Hay alerta naranja y estoy en el lago, ¿qué hago?
+        fuentes: seguridad_protocolo_alertas_retiro.pdf, flora_fauna__plan_director_arbolado__madrid__v01.pdf
+        0.710 que se balizan. Según la página municipal de estado de los parques, también se restringe el
+acceso a
+        0.687 Seguridad en el Parque del Retiro (Madrid): protocolo de
+alertas meteorológicas
+Qué es el protocolo
+        0.683 en verano sin reducir la seguridad. La nota oficial no detalla en esta modificación el umbral de la
+
+        0.680 Protocolo de alertas del Retiro. Sirve para prevenir accidentes por caída de ramas o árboles y
+otros
+        0.676 160
+ Prevención de alertas: se establecen los niveles de alerta en función de las
+velocidades del
+
+top_k=5 · fuente esperada encontrada en 12/15 preguntas con fuente declarada · 10 de abstencion
