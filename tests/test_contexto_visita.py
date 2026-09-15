@@ -99,7 +99,7 @@ def test_nivel_segun_los_umbrales_del_protocolo(racha, esperado):
 
 
 def test_el_mensaje_de_alerta_roja_menciona_el_cierre():
-    assert "cierra" in nivel_de_viento(70.0)["mensaje"]
+    assert "cerrarse" in nivel_de_viento(70.0)["mensaje"]
 
 
 def test_sin_viento_fuerte_no_hay_mensaje():
@@ -169,7 +169,7 @@ def test_el_viento_fuerte_aparece_como_peculiaridad_con_su_aviso():
     )
     assert contexto["viento"]["nivel"] == "rojo"
     texto = " ".join(contexto["peculiaridades"])
-    assert "cierra" in texto
+    assert "cerrarse" in texto
     assert "orientativa" in texto.lower(), "Debe avisar de que no es oficial."
 
 
@@ -187,6 +187,7 @@ def test_el_parque_cerrado_se_avisa():
         api_key="", momento=datetime(2026, 1, 14, 4)
     )
     assert any("cerrado" in p for p in contexto["peculiaridades"])
+    assert any("Abre a las" in p for p in contexto["peculiaridades"])
 
 
 def test_la_fuente_siempre_acompana_al_dato():
@@ -194,7 +195,7 @@ def test_la_fuente_siempre_acompana_al_dato():
         api_key="clave", sesion=sesion_ok(), momento=datetime(2026, 9, 14, 10)
     )
     assert "AEMET" in contexto["fuente"]
-    assert "3195" in contexto["fuente"]
+    assert "Retiro" in contexto["fuente"]
 
 
 def test_texto_de_bienvenida_incluye_temperatura_y_fuente():
@@ -209,4 +210,19 @@ def test_texto_de_bienvenida_incluye_temperatura_y_fuente():
 
 def test_texto_de_bienvenida_sin_datos_lo_declara():
     contexto = saludo_contextual(api_key="", momento=datetime(2026, 9, 14, 10))
-    assert "Sin datos meteorologicos" in texto_de_bienvenida(contexto)
+    assert "Sin datos meteorológicos" in texto_de_bienvenida(contexto)
+
+
+def test_una_clave_vacia_no_recurre_al_entorno(monkeypatch):
+    """Pasar "" significa «sin clave», aunque AEMET_API_KEY exista en .env.
+
+    Si no se respeta, los tests acaban llamando a la API real.
+    """
+    monkeypatch.setenv("AEMET_API_KEY", "clave-que-no-debe-usarse")
+    assert obtener_observacion(api_key="") is None
+    assert obtener_observacion(api_key=None) is None
+
+
+def test_sin_indicar_clave_se_lee_del_entorno(monkeypatch):
+    monkeypatch.delenv("AEMET_API_KEY", raising=False)
+    assert obtener_observacion() is None

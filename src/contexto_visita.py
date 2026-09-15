@@ -44,7 +44,7 @@ HORA_CIERRE_VERANO = 24  # abril a septiembre
 MESES_VERANO = range(4, 10)
 
 AVISO_NO_OFICIAL = (
-    "Comparacion orientativa con los umbrales del protocolo. El estado oficial "
+    "Comparación orientativa con los umbrales del protocolo. El estado oficial "
     "del parque se publica en los paneles de los accesos y en @MADRID."
 )
 
@@ -88,8 +88,11 @@ def _kmh(velocidad_ms: float | None) -> float | None:
     return round(float(velocidad_ms) * 3.6, 1)
 
 
+_SIN_INDICAR = object()
+
+
 def obtener_observacion(
-    api_key: str | None = None,
+    api_key: str | None | object = _SIN_INDICAR,
     sesion: Any | None = None,
 ) -> dict | None:
     """Ultima observacion de la estacion del Retiro, o None si no se puede.
@@ -101,8 +104,12 @@ def obtener_observacion(
     funcionando sin el aviso. Un fallo de la API externa no puede tumbar el
     asistente.
     """
-    api_key = api_key or os.getenv("AEMET_API_KEY", "")
-    if not api_key:
+    # Solo se recurre a .env cuando no se indica nada. Pasar "" o None
+    # significa "sin clave" y debe respetarse: de lo contrario los tests
+    # acabarian llamando a la API real.
+    if api_key is _SIN_INDICAR:
+        api_key = os.getenv("AEMET_API_KEY", "")
+    if not isinstance(api_key, str) or not api_key.strip():
         return None
 
     sesion = sesion or requests
@@ -134,7 +141,7 @@ def obtener_observacion(
         "precipitacion_mm": ultima.get("prec"),
         "viento_kmh": _kmh(ultima.get("vv")),
         "racha_kmh": _kmh(ultima.get("vmax")),
-        "fuente": "AEMET OpenData, estacion 3195 (Madrid-Retiro)",
+        "fuente": "AEMET, estación meteorológica del Retiro",
     }
 
 
@@ -147,24 +154,23 @@ def nivel_de_viento(racha_kmh: float | None) -> dict:
         return {
             "nivel": "rojo",
             "mensaje": (
-                f"Rachas de {racha_kmh:.0f} km/h, por encima del umbral de "
-                f"{VIENTO_ROJA_KMH:.0f} km/h con el que el parque se cierra."
+                f"Rachas de {racha_kmh:.0f} km/h: por encima de este viento "
+                "el parque puede cerrarse."
             ),
         }
     if racha_kmh >= VIENTO_NARANJA_KMH:
         return {
             "nivel": "naranja",
             "mensaje": (
-                f"Rachas de {racha_kmh:.0f} km/h, dentro del rango de alerta "
-                f"naranja ({VIENTO_NARANJA_KMH:.0f}-{VIENTO_ROJA_KMH:.0f} km/h): "
-                "pueden restringirse zonas infantiles, deportivas y algunos jardines."
+                f"Rachas de {racha_kmh:.0f} km/h: con este viento suelen "
+                "cerrarse las zonas infantiles, deportivas y algunos jardines."
             ),
         }
     return {"nivel": "verde", "mensaje": None}
 
 
 def saludo_contextual(
-    api_key: str | None = None,
+    api_key: str | None | object = _SIN_INDICAR,
     sesion: Any | None = None,
     momento: datetime | None = None,
 ) -> dict:
@@ -183,11 +189,16 @@ def saludo_contextual(
     peculiaridades: list[str] = []
     if not estado["abierto"]:
         peculiaridades.append(
-            f"Ahora mismo el parque esta cerrado. Horario de {estado['temporada']}: "
-            f"{estado['horario']}."
+            f"El parque está cerrado ahora mismo. Abre a las "
+            f"{HORA_APERTURA:02d}:00."
         )
     else:
-        peculiaridades.append(f"El parque cierra hoy a las {estado['hora_cierre'] % 24:02d}:00.")
+        faltan = estado["hora_cierre"] - momento.hour
+        cierre = f"{estado['hora_cierre'] % 24:02d}:00"
+        if faltan <= 1:
+            peculiaridades.append(f"El parque cierra dentro de poco, a las {cierre}.")
+        else:
+            peculiaridades.append(f"El parque cierra hoy a las {cierre}.")
 
     if viento["mensaje"]:
         peculiaridades.append(viento["mensaje"])
@@ -196,9 +207,7 @@ def saludo_contextual(
     if observacion and observacion.get("precipitacion_mm"):
         try:
             if float(observacion["precipitacion_mm"]) > 0:
-                peculiaridades.append(
-                    "Esta lloviendo en el parque segun la ultima observacion."
-                )
+                peculiaridades.append("Está lloviendo en el parque.")
         except (TypeError, ValueError):
             pass
 
@@ -223,12 +232,12 @@ def texto_de_bienvenida(contexto: dict) -> str:
             tiempo += f", viento {observacion['viento_kmh']:.0f} km/h"
         lineas.append(tiempo + ".")
     else:
-        lineas.append("(Sin datos meteorologicos ahora mismo.)")
+        lineas.append("(Sin datos meteorológicos ahora mismo.)")
 
     lineas.extend(contexto["peculiaridades"])
 
     if contexto["fuente"]:
         hora = observacion.get("hora_utc") or "sin hora"
-        lineas.append(f"Datos: {contexto['fuente']}, observacion de {hora} UTC.")
+        lineas.append(f"Datos de {contexto['fuente']}, medidos a las {hora}.")
 
     return "\n".join(lineas)
