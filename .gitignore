@@ -8,5 +8,6 @@ output/
 *.egg-info/
 # Checkpoints locales de embeddings.
 .cache/
+chroma_retiro_madrid.zip
 
 probar_cli.py
