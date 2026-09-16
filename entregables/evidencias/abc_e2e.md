@@ -43,8 +43,8 @@ Resultado:
 
 Evidencias:
 
-![Índice preconstruido descargado](capturas/01_indice_preconstruido_descargado.png.png)
-![Colección chroma_abc_test](capturas/02_chroma_abc_test.png.png)
+![Índice preconstruido descargado](capturas/01_indice_preconstruido_descargado.png)
+![Colección chroma_abc_test](capturas/02_chroma_abc_test.png)
 
 Conclusión: OK. El índice preconstruido puede instalarse en una ruta independiente sin modificar la colección local existente.
 
@@ -74,7 +74,7 @@ Respuesta observada:
 
 Evidencia:
 
-![Respuesta RAG completa](capturas/03_respuesta_rag_completa.png.png)
+![Respuesta RAG completa](capturas/03_respuesta_rag_completa.png)
 
 Conclusión: OK. El flujo retrieval → contexto → generación → fuentes funciona utilizando el índice preconstruido.
 
@@ -102,7 +102,7 @@ Respuesta observada:
 
 Evidencia:
 
-![Respuesta de abstención](capturas/04_respuesta_abstencion.png.png)
+![Respuesta de abstención](capturas/04_respuesta_abstencion.png)
 
 Conclusión: OK. La abstención generativa funciona cuando el retrieval devuelve chunks, pero el contexto recuperado no contiene evidencia suficiente para responder.
 
@@ -137,7 +137,7 @@ Respuesta observada:
 
 Evidencia:
 
-![Respuesta con contexto recuperado](capturas/05_respuesta_contexto_recuperado.png.png)
+![Respuesta con contexto recuperado](capturas/05_respuesta_contexto_recuperado.png)
 
 Conclusión: OK. La opción `--contexto` expone correctamente los chunks utilizados y permite verificar la relación entre retrieval, fuentes y respuesta generada.
 
@@ -188,8 +188,8 @@ El campo `chunk_id` de las entradas de citas apareció como `null` en esta ejecu
 
 Evidencias:
 
-![Salida JSON, parte 1](capturas/06_respuesta_json_parte1.png.png)
-![Salida JSON, parte 2](capturas/07_respuesta_json_parte2.png.png)
+![Salida JSON, parte 1](capturas/06_respuesta_json_parte1.png)
+![Salida JSON, parte 2](capturas/07_respuesta_json_parte2.png)
 
 Conclusión: OK con observación. La opción `--json` expone correctamente la respuesta estructurada del RAG y mantiene la metadata de retrieval y el enriquecimiento de citas.
 
@@ -217,7 +217,7 @@ Validaciones realizadas desde la interfaz:
 
 Evidencia:
 
-![Aplicación Streamlit](capturas/08_streamlit.png.png)
+![Aplicación Streamlit](capturas/08_streamlit.png)
 
 Conclusión: OK. La capa de aplicación Streamlit arranca correctamente y consume el mismo flujo RAG validado previamente desde CLI.
 
@@ -247,7 +247,7 @@ Estos valores corresponden a los tests con embeddings de juguete y no sustituyen
 
 Evidencia:
 
-![Suite completa de tests](capturas/09_suite_completa.png.png)
+![Suite completa de tests](capturas/09_suite_completa.png)
 
 Conclusión: OK. La suite completa del proyecto pasa en el entorno de validación con 338 tests correctos.
 
