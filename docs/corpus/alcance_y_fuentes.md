@@ -115,7 +115,7 @@ El corpus debe contener al menos dos formatos. Como orientación, se seleccionar
 - Fecha de vigencia: normativa 2018 y modificación posterior (Madrid 360, 2022); carril bici y alquiler, 2017.
 - Observaciones de calidad: el precio correcto de la fuente es ~24 €/día (el PDF anterior decía 34 €). Eliminadas las «zonas prohibidas», «normas» y «consejos», que no figuran en la fuente. Se omite la sugerencia de Zona Retiro de salir del carril bici por los senderos, porque contradice la ordenanza. Conviene comprobar el texto consolidado vigente de la ordenanza.
 
-## Filas para el inventario
+## Inventario de fuentes de itinerarios, información práctica y seguridad
 
 | Archivo local | Categoría | Formato | Fuente | Descarga | Responsable | Estado |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -125,16 +125,7 @@ El corpus debe contener al menos dos formatos. Como orientación, se seleccionar
 | informacion_practica_guia_visitante_retiro.pdf | informacion_practica | PDF | esMadrid, Museo Reina Sofía, Ayuntamiento de Madrid, Noticias Retiro | 11/09/2026 | David | Por revisar |
 | seguridad_protocolo_alertas_retiro.pdf | seguridad | PDF | Ayuntamiento de Madrid, esMadrid | 11/09/2026 | David | Por revisar |
 
-
-
-| Archivo local | Categoría   | Formato | Fuente    | Descarga  | Responsable | Estado      |
-| ------------- | ----------- | ------- | --------- | --------- | ----------- | ----------- |
-| Pendiente     | historia    | PDF     | Pendiente | Pendiente | Alex        | Por revisar |
-| Pendiente     | flora_fauna | PDF     | REVISADO  | Pendiente | Alejandra   | Por revisar |
-| Pendiente     | intinerario | PDF     | Pendiente | Pendiente | DAVID       | Por revisar |
-
-
-Estados: `candidato`, `por revisar`, `aceptado` y `excluido`.
+Estados posibles: `candidato`, `por revisar`, `aceptado` y `excluido`.
 
 ## 8. Criterios de aceptación
 
