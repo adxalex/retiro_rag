@@ -166,11 +166,137 @@ Copia `.env.example` como `.env` y añade una clave válida:
 GEMINI_API_KEY=
 LLM_MODEL=gemini-2.5-flash
 EMBEDDING_MODEL=gemini-embedding-001
+
+# Ruta local del índice Chroma preconstruido.
+CHROMA_DIR=chroma
 ```
 
 También se admite `GOOGLE_API_KEY` como nombre alternativo para la clave.
 
 El archivo `.env` contiene información sensible y no debe subirse al repositorio.
+
+`CHROMA_DIR` define la ruta local donde se encuentra la colección persistente de ChromaDB.
+Por defecto se utiliza `chroma`.
+
+En una instalación normal, el índice preconstruido se descarga con:
+
+```bash
+python -m scripts.download_index
+```
+
+El script instala el índice en la ruta indicada por `CHROMA_DIR`, por lo que no es necesario regenerar los embeddings ni reconstruir la colección para ejecutar el sistema.
+
+## Índice Chroma preconstruido
+
+El índice vectorial validado del proyecto se distribuye como un artefacto preconstruido para evitar regenerar embeddings y reconstruir ChromaDB en cada instalación.
+
+La colección incluida es:
+
+```text
+COLLECTION_NAME=retiro_madrid
+EMBEDDING_MODEL=gemini-embedding-001
+HNSW_SPACE=cosine
+```
+
+El artefacto se publica en la release `index-v1` del repositorio.
+
+### Descargar el índice
+
+Con el entorno virtual activado y las dependencias instaladas:
+
+```bash
+python -m scripts.download_index
+```
+
+El script:
+
+- descarga `chroma_retiro_madrid.zip` desde la release oficial;
+- verifica su integridad mediante SHA-256;
+- extrae el contenido en `CHROMA_DIR`;
+- utiliza `chroma` como ruta por defecto;
+- no sobrescribe un índice existente salvo que se solicite explícitamente.
+
+La ruta puede configurarse mediante `.env`:
+
+```dotenv
+CHROMA_DIR=chroma
+```
+
+Si el índice ya existe y se desea sustituir deliberadamente:
+
+```bash
+python -m scripts.download_index --force
+```
+
+`--force` elimina el directorio configurado en `CHROMA_DIR` antes de instalar el índice descargado, por lo que debe utilizarse únicamente cuando se quiera reemplazar de forma consciente una copia local existente.
+
+### Ejecutar el sistema con el índice preconstruido
+
+Una vez descargado el índice, no es necesario ejecutar la pipeline offline de embeddings e indexación.
+
+Para comprobar el retrieval:
+
+```bash
+python main.py --query "¿A qué hora abre el Retiro?"
+```
+
+Para ejecutar una respuesta RAG completa:
+
+```bash
+python main.py --ask "¿A qué hora abre el Retiro?"
+```
+
+Para iniciar la interfaz:
+
+```bash
+streamlit run app.py
+```
+
+El flujo normal de ejecución queda así:
+
+```text
+Pregunta
+    → embedding de la consulta
+    → retrieval sobre el índice Chroma preconstruido
+    → generación de respuesta
+    → CLI / Streamlit
+```
+
+La consulta del usuario sigue necesitando generar su embedding en tiempo de ejecución, y la respuesta completa utiliza el modelo generativo configurado. Lo que se evita es regenerar los embeddings de todo el corpus y reconstruir la colección ChromaDB.
+
+### Cuándo reconstruir el índice
+
+No debe reconstruirse el índice para una ejecución normal.
+
+La reconstrucción solo es necesaria cuando cambia alguno de estos elementos:
+
+- el corpus indexado;
+- la estrategia de chunking;
+- el modelo de embeddings;
+- la dimensión de los vectores;
+- la métrica de la colección.
+
+Los comandos de indexación quedan reservados para mantenimiento o regeneración deliberada:
+
+```bash
+python main.py --index
+python main.py --index --recreate-index
+python -m scripts.index_corpus
+```
+
+Para una instalación normal desde `develop`, el flujo recomendado es:
+
+```bash
+git clone https://github.com/adxalex/retiro_rag.git
+cd retiro_rag
+
+python -m venv .venv
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+python -m scripts.download_index
+streamlit run app.py
+```
 
 ## Configuración
 
