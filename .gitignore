@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .env
 chroma/
+chroma_retiro_madrid.zip
 output/
 .DS_Store
 *.egg-info/

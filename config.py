@@ -6,7 +6,7 @@ load_dotenv()
 
 # --- Rutas ---
 DATA_DIR = "data"
-CHROMA_DIR = "chroma"
+CHROMA_DIR = os.getenv("CHROMA_DIR", "chroma")
 COLLECTION_NAME = "retiro_madrid"
 
 # Modelos estables seleccionados para el MVP.
