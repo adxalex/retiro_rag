@@ -33,8 +33,11 @@ sys.path.insert(0, str(ROOT))
 from config import CHUNK_OVERLAP, CHUNK_SIZE, DATA_DIR, TOP_K  # noqa: E402
 from src import retrieve as retrieve_module  # noqa: E402
 
-# (pregunta, esperado, fuente esperada o None)
-PREGUNTAS: list[tuple[str, str, str | None]] = [
+# (pregunta, comportamiento esperado, fuente o fuentes aceptables)
+#
+# Varias fuentes pueden responder legitimamente la misma pregunta desde que el
+# corpus crecio. Se acepta una lista: basta con que aparezca una de ellas.
+PREGUNTAS: list[tuple[str, str, str | list[str] | None]] = [
     ("¿En qué siglo se construyó originalmente el Real Sitio del Buen Retiro?",
      "responde", "retiro_jardines.md"),
     ("¿Qué rey impulsó la creación del Retiro como espacio palaciego y de recreo?",
@@ -44,12 +47,17 @@ PREGUNTAS: list[tuple[str, str, str | None]] = [
     ("¿Qué monumento preside el Estanque Grande del Retiro?",
      "responde", "retiro_monumentos_jardines.csv"),
     ("¿Qué edificio del Retiro se utiliza actualmente para exposiciones del Museo Reina Sofía?",
-     "responde", "informacion_practica_guia_visitante_retiro.pdf"),
+     "responde", ["informacion_practica_guia_visitante_retiro.pdf",
+                  "arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md",
+                  "retiro_palacio_cristal_velazquez.md"]),
     ("¿Qué característica arquitectónica distingue al Palacio de Cristal?",
-     "responde", "retiro_monumentos_jardines.csv"),
+     "responde", ["retiro_monumentos_jardines.csv",
+                  "retiro_palacio_cristal_velazquez.md",
+                  "arte_cultura__palacio_cristal_velazquez__museo_reina_sofia__v01.md"]),
     ("¿Qué función tenía originalmente la Casa de Vacas?", "abstencion", None),
+    # Cubierta desde que se integro la fuente contrastada de fauna (VEG-24).
     ("¿Qué tipo de fauna es más habitual encontrar en el Estanque Grande?",
-     "abstencion", None),
+     "responde", "flora_fauna__fauna_estanque_grande_retiro__fuentes_contrastadas__v01.md"),
     ("¿Qué jardín del Retiro es famoso por sus parterres geométricos y su estilo francés?",
      "responde", "informacion_practica_guia_visitante_retiro.pdf"),
     ("¿Qué árbol centenario del Retiro está catalogado como uno de los más antiguos de Madrid?",
@@ -65,7 +73,8 @@ PREGUNTAS: list[tuple[str, str, str | None]] = [
     ("¿Qué ruta del Retiro incluye el Palacio de Cristal, el Estanque y el Parterre?",
      "responde", "itinerarios_pie_retiro_.pdf"),
     ("¿Qué institución oficial respalda la información turística del Retiro?",
-     "responde", "informacion_practica_guia_visitante_retiro.pdf"),
+     "responde", ["informacion_practica_guia_visitante_retiro.pdf",
+                  "actividades__guia_retiro__fuentes_mixtas__v01.md"]),
     ("¿Qué horario aproximado tiene el parque durante los meses de verano?",
      "responde", "informacion_practica_guia_visitante_retiro.pdf"),
     ("¿Qué zona del Retiro es considerada de especial interés para fotógrafos por su luz natural?",
@@ -173,9 +182,14 @@ def main() -> int:
 
         fuentes = [r.get("source", "?") for r in resultados]
         mejor = resultados[0]["score"] if resultados else 0.0
-        if fuente_esperada is None:
+        aceptables = (
+            [] if fuente_esperada is None
+            else [fuente_esperada] if isinstance(fuente_esperada, str)
+            else list(fuente_esperada)
+        )
+        if not aceptables:
             marca = "   "
-        elif fuente_esperada in fuentes:
+        elif any(f in fuentes for f in aceptables):
             marca = "OK "
             aciertos += 1
         else:
@@ -184,8 +198,8 @@ def main() -> int:
 
         print(f"{marca}P{numero:02d} [{esperado:10}] score_top1={mejor:.3f}  {pregunta[:68]}")
         print(f"        fuentes: {', '.join(dict.fromkeys(fuentes))}")
-        if fuente_esperada and fuente_esperada not in fuentes:
-            print(f"        esperaba: {fuente_esperada}")
+        if aceptables and not any(f in fuentes for f in aceptables):
+            print(f"        esperaba una de: {', '.join(aceptables)}")
         if args.detalle:
             for resultado in resultados:
                 print(f"        {resultado['score']:.3f} {resultado['text'][:100]}")

@@ -45,13 +45,29 @@ def _fragmento(numero: int, chunk: dict, caracteres: int = 300) -> None:
     print(f"    {texto}")
 
 
-def cmd_index(recreate: bool = False) -> int:
-    """Carga, chunkea e indexa el corpus completo."""
+def cmd_index(recreate: bool = False, dry_run: bool = False) -> int:
+    """Carga, chunkea e indexa el corpus completo.
+
+    Por defecto NO recrea la coleccion: hace upsert sobre la existente. Para
+    reconstruirla desde cero hay que pedirlo con --recreate-index, porque
+    regenerar los embeddings consume cuota de la API.
+    """
     from src.pipeline import build_index
 
-    resultado = build_index(recreate=recreate)
-    _titulo("Indexacion completada")
-    print(resultado)
+    informe = build_index(recreate=recreate, dry_run=dry_run)
+
+    _titulo("Dry run completado" if dry_run else "Indexacion completada")
+    print(f"Documentos cargados: {informe['documents']}")
+    print(f"Fuentes diferentes:  {informe['sources']}")
+    print(f"Chunks generados:    {informe['chunks']}")
+    for grupo, cuantos in informe.get("chunks_by_group", {}).items():
+        print(f"  {grupo}: {cuantos}")
+    if informe.get("indexed"):
+        print(f"\nRegistros en Chroma: {informe.get('collection_count')}")
+        print("Coleccion recreada desde cero." if recreate
+              else "Upsert sobre la coleccion existente.")
+    else:
+        print("\nNo se ha llamado a Gemini ni a Chroma.")
     return 0
 
 
@@ -132,6 +148,10 @@ def main() -> int:
                         help="Umbral de abstencion; por defecto, el de .env")
     parser.add_argument("--contexto", action="store_true",
                         help="Con --ask, muestra tambien los fragmentos usados")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Con --index, valida load y chunk sin llamar a Gemini")
+    parser.add_argument("--saludo", action="store_true",
+                        help="Muestra el saludo con el tiempo actual del Retiro")
     parser.add_argument("--json", action="store_true",
                         help="Salida en JSON en lugar de texto")
     args = parser.parse_args()
@@ -140,8 +160,13 @@ def main() -> int:
         parser.error("--top-k debe ser mayor que 0.")
 
     try:
+        if args.saludo:
+            from src.contexto_visita import saludo_contextual, texto_de_bienvenida
+
+            print(texto_de_bienvenida(saludo_contextual()))
+            return 0
         if args.index:
-            return cmd_index(recreate=args.recreate_index)
+            return cmd_index(recreate=args.recreate_index, dry_run=args.dry_run)
         if args.query:
             return cmd_query(args.query, top_k=args.top_k, category=args.category,
                              como_json=args.json)

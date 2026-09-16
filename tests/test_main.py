@@ -209,18 +209,19 @@ def test_index_conecta_con_pipeline(monkeypatch, capsys):
 
     received = {}
 
-    def fake_build_index(*, recreate):
+    def fake_build_index(*, recreate, dry_run=False):
         received["recreate"] = recreate
+        received["dry_run"] = dry_run
         return {
+            "documents": 255,
+            "sources": 17,
+            "chunks": 1177,
+            "chunks_by_group": {},
             "indexed": True,
             "collection_count": 1177,
         }
 
-    monkeypatch.setattr(
-        src.pipeline,
-        "build_index",
-        fake_build_index,
-    )
+    monkeypatch.setattr(src.pipeline, "build_index", fake_build_index)
 
     assert cli.cmd_index(recreate=True) == 0
     assert received["recreate"] is True
@@ -228,6 +229,64 @@ def test_index_conecta_con_pipeline(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "Indexacion completada" in output
     assert "1177" in output
+
+
+def test_index_no_recrea_la_coleccion_por_defecto(monkeypatch, capsys):
+    """Sin flags, --index hace upsert: NUNCA borra la coleccion.
+
+    Reconstruir el indice consume cuota de la API y descarta horas de trabajo,
+    asi que debe pedirse a proposito con --recreate-index.
+    """
+    import src.pipeline
+
+    recibidos = {}
+
+    def _falso(data_dir=None, recreate=False, dry_run=False):
+        recibidos.update(recreate=recreate, dry_run=dry_run)
+        return {
+            "documents": 255,
+            "sources": 17,
+            "chunks": 1177,
+            "chunks_by_group": {"historia_monumentos_jardines": 34},
+            "indexed": True,
+            "collection_count": 1177,
+        }
+
+    monkeypatch.setattr(src.pipeline, "build_index", _falso)
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index"])
+    assert cli.main() == 0
+    assert recibidos["recreate"] is False, "El default debe ser seguro."
+    assert recibidos["dry_run"] is False
+    assert "Upsert" in capsys.readouterr().out
+
+
+def test_recreate_index_solo_cuando_se_pide(monkeypatch, capsys):
+    import src.pipeline
+
+    recibidos = {}
+
+    def _falso(data_dir=None, recreate=False, dry_run=False):
+        recibidos.update(recreate=recreate)
+        return {"documents": 255, "sources": 17, "chunks": 1177,
+                "chunks_by_group": {}, "indexed": True, "collection_count": 1177}
+
+    monkeypatch.setattr(src.pipeline, "build_index", _falso)
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--recreate-index"])
+    assert cli.main() == 0
+    assert recibidos["recreate"] is True
+    assert "recreada" in capsys.readouterr().out
+
+
+def test_index_con_dry_run_no_indexa(monkeypatch, capsys):
+    import src.pipeline
+
+    monkeypatch.setattr(src.pipeline, "build_index", lambda **kwargs: {
+        "documents": 255, "sources": 17, "chunks": 1177,
+        "chunks_by_group": {}, "indexed": False, "collection_count": 0,
+    })
+    monkeypatch.setattr(sys, "argv", ["main.py", "--index", "--dry-run"])
+    assert cli.main() == 0
+    assert "No se ha llamado a Gemini" in capsys.readouterr().out
 
 
 def test_coleccion_inexistente_explica_como_indexar(monkeypatch, capsys):
