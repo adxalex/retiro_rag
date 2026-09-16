@@ -127,7 +127,14 @@ def responder(
 ) -> dict:
     """Responde una pregunta con RAG, o se abstiene si no hay evidencia.
 
-    Devuelve {"respuesta", "fuentes", "chunks", "abstuvo", "motivo_abstencion"}.
+    Devuelve {
+        "respuesta",
+        "fuentes",
+        "citas",
+        "chunks",
+        "abstuvo",
+        "motivo_abstencion",
+    }.
     collection y client son inyectables para los tests.
     """
     if not isinstance(pregunta, str) or not pregunta.strip():
@@ -136,7 +143,8 @@ def responder(
     umbral = SCORE_MINIMO if score_minimo is None else float(score_minimo)
 
     with Cronometro() as crono:
-        chunks = retrieve(pregunta, top_k=top_k, collection=collection, where=where)
+        chunks = retrieve(pregunta, top_k=top_k,
+                           collection=collection, where=where)
         salida = _responder_con_chunks(pregunta, chunks, umbral, client)
 
     log_query(

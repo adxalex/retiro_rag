@@ -73,12 +73,17 @@ python -m scripts.index_corpus
 python main.py --index
 python main.py --query "¿Qué es el Palacio de Cristal?"
 python main.py --ask "¿Qué es el Palacio de Cristal?"
+python main.py --ask "..." --top-k 5 --category seguridad --score-minimo 0.35
+python main.py --ask "..." --contexto --json
+python main.py --saludo
 streamlit run app.py
 ```
 
 `python -m scripts.index_corpus` reconstruye la colección por defecto. `python main.py --index` conserva la colección existente; para reconstruirla desde esta CLI se utiliza `python main.py --index --recreate-index`.
 
 El modo `dry_run` solo ejecuta carga, chunking y resumen. Retorna antes de la etapa de embeddings: no llama a Gemini, no accede a ChromaDB y no instancia, crea ni modifica `EmbeddingCheckpoint`.
+
+`--top-k` fija cuántos fragmentos recupera `--query`/`--ask`; `--category` filtra por categoría; `--score-minimo` sobrescribe el umbral de abstención para esa consulta; `--contexto` añade a `--ask` los fragmentos usados; `--json` cambia la salida a JSON; `--saludo` muestra el saludo contextual con el tiempo del Retiro.
 
 ## 7. Regeneración del índice
 

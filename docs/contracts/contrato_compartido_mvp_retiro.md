@@ -226,22 +226,27 @@ Salida pública de `responder()` y única estructura que necesitan CLI, Streamli
 ```json
 {
   "respuesta": "El parque abre a las 06:00...",
-  "fuentes": ["mock_folleto_retiro.pdf"],
+  "fuentes": ["informacion_practica_guia_visitante_retiro.pdf"],
   "citas": [
     {
       "n": 1,
-      "source": "mock_folleto_retiro.pdf",
+      "source": "informacion_practica_guia_visitante_retiro.pdf",
       "page": 1,
-      "chunk_id": "mock-folleto-retiro__0000",
-      "score": 0.83
+      "chunk_id": "informacion-practica-guia-visitante-retiro__0000",
+      "score": 0.83,
+      "titulo": "Guía del visitante del Retiro",
+      "organismo": "esMadrid, Turismo de Madrid",
+      "oficial": true,
+      "etiqueta": "fuente oficial",
+      "texto": "Guía del visitante del Retiro · esMadrid, Turismo de Madrid, página 1"
     }
   ],
   "chunks": [
     {
-      "chunk_id": "mock-folleto-retiro__0000",
-      "document_id": "mock-folleto-retiro",
+      "chunk_id": "informacion-practica-guia-visitante-retiro__0000",
+      "document_id": "informacion-practica-guia-visitante-retiro",
       "text": "El parque permanece abierto todos los días...",
-      "source": "mock_folleto_retiro.pdf",
+      "source": "informacion_practica_guia_visitante_retiro.pdf",
       "chunk_index": 0,
       "category": "informacion_practica",
       "corpus_group": "itinerarios_informacion_practica_seguridad",
@@ -254,21 +259,82 @@ Salida pública de `responder()` y única estructura que necesitan CLI, Streamli
 }
 ```
 
-Firma interna mínima:
+Las citas se enriquecen mediante `src/fuentes.py`. El catálogo traduce el
+nombre técnico del archivo a una representación destinada a usuario:
+
+- `titulo`: nombre legible de la fuente.
+- `organismo`: organismo o autor responsable.
+- `oficial`: indica si la fuente está catalogada como oficial.
+- `etiqueta`: `"fuente oficial"` o `"fuente no oficial"`.
+- `texto`: representación legible utilizada por la interfaz.
+
+Si una fuente no figura en el catálogo, se genera un título legible a partir
+del nombre del archivo y se considera no oficial por defecto.
+
+Firma implementada:
 
 ```python
-def responder(pregunta: str, top_k: int = 3) -> dict:
-    ...
+def responder(
+    pregunta: str,
+    top_k: int = TOP_K,
+    score_minimo: float | None = None,
+    collection: Any | None = None,
+    client: Any | None = None,
+    where: dict | None = None,
+) -> dict:
 ```
+
+- pregunta: consulta del usuario.
+- top_k: número máximo de chunks recuperados.
+- score_minimo: permite sobrescribir el umbral de abstención configurado para una consulta concreta.
+- collection: permite inyectar una colección ChromaDB, especialmente en pruebas.
+- client: permite inyectar el cliente generativo, evitando llamadas reales al modelo en pruebas.
+- where: permite aplicar filtros de metadata durante retrieval.
+
+La inyección de collection y client permite probar el flujo de respuesta sin depender de una colección ChromaDB persistente ni realizar llamadas reales al modelo generativo. where no es una dependencia inyectable, sino un filtro opcional de retrieval.
 
 ### Reglas
 
-- - Siempre devuelve `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
+- Siempre devuelve `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
 - `fuentes` no contiene duplicados.
+- `citas` contiene la correspondencia entre las referencias numeradas utilizadas en la respuesta y los chunks recuperados, enriquecida con la información legible del catálogo de fuentes.
 - `abstuvo` es `true` cuando el sistema no dispone de contexto suficiente para responder con fundamento.
+- `motivo_abstencion` indica la causa cuando `abstuvo` es `true`.
 - CLI y Streamlit llaman a la misma función; no duplican la lógica RAG.
 - El MVP no necesita una API HTTP entre módulos para que este contrato sea válido.
 - Las métricas pueden añadirse posteriormente como campo opcional o registrarse mediante logging sin romper el contrato mínimo.
+
+### Criterio de abstención
+
+El sistema aplica dos compuertas consecutivas:
+
+1. **Umbral de retrieval.**  
+   El umbral por defecto se obtiene de la variable de entorno `RAG_SCORE_MINIMO`:
+   `SCORE_MINIMO = float(os.getenv("RAG_SCORE_MINIMO", "0.0"))`
+   Si `score_minimo` se proporciona explícitamente a `responder()`, ese valor prevalece para la consulta.
+   Si no se recupera ningún chunk, el sistema se abstiene con el motivo `sin_resultados`.
+   Si el mejor resultado recuperado cumple:
+   `top1.score < score_minimo`
+   el sistema se abstiene sin llamar al modelo generativo.
+
+   En ese caso, `motivo_abstencion` toma un valor con la forma:
+   `score_bajo` (<score> < <umbral>)
+
+2. **Abstención generativa.**
+   Si el retrieval supera el umbral, se construye el prompt con los chunks recuperados y se llama al modelo generativo.
+   El prompt obliga al modelo a devolver exactamente:
+   `SIN_EVIDENCIA`
+   cuando el contexto recuperado no permite responder con fundamento.
+   Si el modelo devuelve ese centinela, el sistema se abstiene y establece:
+   `motivo_abstencion = "el_modelo_no_vio_evidencia"`
+
+Por tanto, los motivos de abstención previstos son:
+
+- sin_resultados
+- score_bajo (...)
+- el_modelo_no_vio_evidencia
+
+El umbral `RAG_SCORE_MINIMO` forma parte de la configuración del comportamiento del RAG y debe calibrarse con el índice real y el banco de preguntas. Un valor 0.0 desactiva en la práctica la compuerta por score y deja la decisión de abstención principalmente en manos del centinela generativo.
 
 ## 10. Reparto simplificado
 
@@ -432,10 +498,23 @@ Una secuencia de `LoadedDocument` válidos producidos por el bloque A.
 6. Definir y probar una regla sencilla y documentada de abstención.
 7. Implementar la API interna `responder(pregunta, top_k)`.
 8. Devolver siempre `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
-9. Exponer CLI con `--query` y `--ask` reutilizando `responder()`.
+9. La CLI expone las siguientes operaciones y modificadores:
+   - `--query`: ejecuta únicamente retrieval.
+   - `--ask`: ejecuta retrieval y generación completa.
+   - `--top-k`: modifica el número de chunks recuperados.
+   - `--category`: filtra el retrieval por categoría.
+   - `--score-minimo`: sobrescribe para esa consulta el umbral de abstención.
+   - `--contexto`: muestra también los chunks utilizados en una respuesta.
+   - `--json`: produce salida JSON para consumo programático.
+   - `--saludo`: muestra el saludo contextual y, cuando está disponible, información meteorológica.
+   - `--index`: ejecuta la indexación del corpus.
+   - `--recreate-index`: fuerza la reconstrucción de la colección al indexar.
+   - `--dry-run`: valida carga y chunking sin generar embeddings ni modificar ChromaDB.
 10. Implementar el asistente RAG en Streamlit sin duplicar la lógica RAG.
 11. Mostrar respuesta, fuentes, chunks y métricas exigidas por el enunciado.
 12. Añadir pruebas unitarias, de integración y de contrato para retrieval y respuesta.
+
+En la ejecución ordinaria del asistente con un índice ya construido no es necesario ejecutar `--index`. Las consultas usan la colección persistente existente.
 
 #### Salida de C
 
@@ -554,6 +633,7 @@ Las siguientes decisiones están adoptadas para el MVP:
 - [x] El modelo de embeddings se define en la configuración.
 - [x] Un cambio de corpus, chunking, modelo, dimensión o métrica requiere evaluar la reconstrucción de la colección.
 - [x] CLI y Streamlit consumen `responder()` sin duplicar la lógica RAG.
+- [x] El umbral de abstención de retrieval se configura mediante `RAG_SCORE_MINIMO`.
 - [x] La respuesta pública incluye `respuesta`, `fuentes`, `citas`, `chunks`, `abstuvo` y `motivo_abstencion`.
 
 El contrato se considera consolidado para el MVP. Los cambios posteriores
