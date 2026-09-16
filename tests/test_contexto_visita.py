@@ -248,3 +248,41 @@ def test_ahora_en_madrid_devuelve_hora_con_zona():
     from src.contexto_visita import ahora_en_madrid
 
     assert ahora_en_madrid().tzinfo is not None
+
+
+def test_una_respuesta_de_error_de_aemet_no_rompe_la_app():
+    """Ante un error de cuota, AEMET devuelve un objeto y no una lista.
+
+    Sin la comprobacion de tipo, observaciones[-1] lanzaba KeyError y tumbaba
+    toda la aplicacion de Streamlit. Detectado en la prueba desde clon limpio.
+    """
+    sesion = SesionFalsa([
+        RespuestaFalsa({"datos": "https://opendata.aemet.es/datos/x"}),
+        RespuestaFalsa({
+            "descripcion": "Too Many Requests",
+            "estado": 429,
+        }),
+    ])
+    assert obtener_observacion(api_key="clave", sesion=sesion) is None
+
+
+def test_una_observacion_que_no_es_diccionario_tampoco_rompe():
+    sesion = SesionFalsa([
+        RespuestaFalsa({"datos": "https://opendata.aemet.es/datos/x"}),
+        RespuestaFalsa(["texto inesperado"]),
+    ])
+    assert obtener_observacion(api_key="clave", sesion=sesion) is None
+
+
+def test_el_saludo_sigue_saliendo_si_aemet_falla():
+    """El banner degrada: sin tiempo, pero con saludo y horario."""
+    sesion = SesionFalsa([
+        RespuestaFalsa({"datos": "https://x"}),
+        RespuestaFalsa({"estado": 429}),
+    ])
+    contexto = saludo_contextual(
+        api_key="clave", sesion=sesion, momento=datetime(2026, 9, 16, 22)
+    )
+    assert contexto["observacion"] is None
+    assert contexto["saludo"]
+    assert contexto["peculiaridades"]

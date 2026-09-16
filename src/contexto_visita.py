@@ -138,22 +138,29 @@ def obtener_observacion(
         segunda = sesion.get(url_datos, timeout=TIEMPO_MAXIMO)
         segunda.raise_for_status()
         observaciones = segunda.json()
-        if not observaciones:
+
+        # AEMET devuelve una lista de observaciones, pero ante un error de
+        # cuota o de servicio responde con un objeto de descripcion. Sin esta
+        # comprobacion, observaciones[-1] lanzaba KeyError y tumbaba la app.
+        if not isinstance(observaciones, list) or not observaciones:
             return None
+
+        ultima = observaciones[-1]
+        if not isinstance(ultima, dict):
+            return None
+
+        return {
+            "estacion": ultima.get("ubi", "Madrid-Retiro"),
+            "hora_utc": ultima.get("fint"),
+            "temperatura_c": ultima.get("ta"),
+            "humedad_pct": ultima.get("hr"),
+            "precipitacion_mm": ultima.get("prec"),
+            "viento_kmh": _kmh(ultima.get("vv")),
+            "racha_kmh": _kmh(ultima.get("vmax")),
+            "fuente": "AEMET, estación meteorológica del Retiro",
+        }
     except Exception:  # noqa: BLE001 - la API externa nunca rompe la app
         return None
-
-    ultima = observaciones[-1]
-    return {
-        "estacion": ultima.get("ubi", "Madrid-Retiro"),
-        "hora_utc": ultima.get("fint"),
-        "temperatura_c": ultima.get("ta"),
-        "humedad_pct": ultima.get("hr"),
-        "precipitacion_mm": ultima.get("prec"),
-        "viento_kmh": _kmh(ultima.get("vv")),
-        "racha_kmh": _kmh(ultima.get("vmax")),
-        "fuente": "AEMET, estación meteorológica del Retiro",
-    }
 
 
 def nivel_de_viento(racha_kmh: float | None) -> dict:
