@@ -328,6 +328,8 @@ de cada entorno; no se aplica de forma automática.
 
 ## 8. Logging y métricas
 
+## 8. Logging y métricas
+
 `src/logging_utils.py` registra cada consulta en dos sitios: una línea legible
 por consola y una línea JSON por consulta en `output/consultas.jsonl`.
 
@@ -350,15 +352,45 @@ abstenciones, la tasa de abstención y el tiempo medio.
 
 ### Métricas de la sesión de evaluación
 
-- Consultas registradas: `[RELLENAR]`
-- Abstenciones: `[RELLENAR]`
-- Tasa de abstención: `[RELLENAR]`
-- Tiempo medio por consulta: `[RELLENAR]`
+Medición sobre una sesión limpia de 10 consultas reales contra el índice
+completo, con `gemini-3.6-flash` y `top_k = 3`.
 
-Tiempos observados en las pruebas directas: entre 5 y 7 segundos por consulta
-con `gemini-3.6-flash`, incluyendo retrieval y generación.
+| Métrica | Valor |
+|---|---|
+| Consultas registradas | 10 |
+| Abstenciones | 3 |
+| Tasa de abstención | 30 % |
+| Tiempo medio por consulta | 14,8 s |
 
----
+La tasa de abstención del 30 % corresponde a la composición de la sesión: se
+incluyeron a propósito preguntas sin cobertura en el corpus (el estilo
+neomudéjar, el evento deportivo y el aparcamiento) para comprobar el
+comportamiento en ambos casos.
+
+**El tiempo medio de 14,8 segundos es el principal límite de rendimiento del
+sistema.** El grueso corresponde a la generación: el retrieval sobre ChromaDB es
+prácticamente instantáneo y la llamada al modelo consume casi todo el tiempo. Es
+aceptable para una consulta puntual, pero se hace largo en una demostración en
+vivo. Dos mejoras evidentes, fuera del alcance del MVP: devolver la respuesta en
+streaming, para que el usuario empiece a leer antes de que termine de generarse,
+y cachear las consultas repetidas.
+
+### Un fallo detectado al recoger estas métricas
+
+La primera medición dio 314 consultas con un tiempo medio de 0,465 segundos,
+cifras imposibles para consultas reales. La causa era que la suite de tests
+también escribía en el registro: cada ejecución de `pytest` añadía cientos de
+entradas generadas con clientes simulados, porque las pruebas llaman a
+`responder()` y este registra siempre.
+
+Se añadió `tests/conftest.py` con una fixture automática que redirige
+`RUTA_LOG` a un fichero temporal en todas las pruebas, y las métricas se
+tomaron después en una sesión limpia.
+
+El caso ilustra un riesgo propio del logging automático: si el registro no se
+aísla en las pruebas, las métricas derivadas de él dejan de ser fiables sin que
+nada falle de forma visible. Ningún test estaba en rojo y el sistema funcionaba
+con normalidad; lo único incorrecto eran los números.
 
 ## 9. Decisiones técnicas
 

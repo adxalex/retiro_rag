@@ -144,6 +144,14 @@ Para instalar también las dependencias de testing:
 python -m pip install -r requirements-dev.txt
 ```
 
+A continuación hay que crear el archivo `.env` con las claves, tal como se
+describe en [Variables de entorno](#variables-de-entorno). Sin él, el sistema
+falla al ejecutar la primera consulta:
+
+```bash
+cp .env.example .env      # copy .env.example .env en Windows
+```
+
 ### Activación del entorno
 
 En Linux o macOS:
@@ -164,7 +172,7 @@ Copia `.env.example` como `.env` y añade una clave válida:
 
 ```dotenv
 GEMINI_API_KEY=
-LLM_MODEL=gemini-2.5-flash
+LLM_MODEL=gemini-3.6-flash
 EMBEDDING_MODEL=gemini-embedding-001
 ```
 
@@ -197,8 +205,8 @@ HNSW_SPACE=cosine
 TOP_K=3
 MAX_CHUNKS=None
 
-LLM_MODEL=gemini-2.5-flash
-EMBEDDING_MODEL=gemini-embedding-001
+LLM_MODEL=gemini-3.6-flash
+RAG_SCORE_MINIMO=0.65
 ```
 
 `MAX_CHUNKS=None` indica que el pipeline normal procesa el corpus completo. La limitación de chunks queda reservada para experimentos y no se utiliza para construir el índice definitivo.
@@ -216,11 +224,12 @@ dimensiones y distancia coseno. El modelo generativo no forma parte de los
 criterios de reutilización del checkpoint ni de la metadata vectorial; por
 tanto, cambiar únicamente `LLM_MODEL` no obliga a reconstruir el índice.
 
-`gemini-2.5-flash` se mantiene como valor predeterminado actualmente
-versionado en `config.py` y `.env.example`. `gemini-3.6-flash` se utilizó
-satisfactoriamente en pruebas locales de una respuesta y una abstención. Estas
-ejecuciones son smoke tests y no sustituyen una validación sistemática del banco
-completo en CLI y Streamlit.
+`gemini-3.6-flash` es el valor predeterminado versionado en `config.py` y
+`.env.example`. Se migró desde `gemini-2.5-flash`, que Google dejó de servir a
+cuentas nuevas durante el desarrollo y devuelve un error 404.
+
+El cambio se validó ejecutando el banco completo de 25 preguntas por CLI, más
+comprobaciones de respuesta con citas, abstención y la interfaz de Streamlit.
 
 Antes de utilizar los modelos, se recomienda comprobar su disponibilidad:
 
